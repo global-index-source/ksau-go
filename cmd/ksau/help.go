@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var helpMessage string = `
-Usage : ksau [-r] [OPTION] [FILE]
+var helpMessage string = fmt.Sprintf(`
+Usage : %s [-r] [OPTION] [FILE]
 
 Options:
     -r    Add random string to the end of filename (but before extension) when uploading
@@ -30,7 +30,7 @@ help                        : Show this message.
 
 version                     : Show ksau version.
 
-Example: ksau upload test.txt Public
+Example: %s upload test.txt Public
 Note: Each time ksau is run, even if not for uploading, it will attempt to refresh
       the remote with the most free space cache. This might cause a few seconds of delay,
       depending on the internet connection.
@@ -38,7 +38,7 @@ Note: Each time ksau is run, even if not for uploading, it will attempt to refre
 Tool By Sauraj, Hakimi, and Pratham
 Join our Telegram channel for updates:
     https://t.me/ksau_update
-`
+`, executableName, executableName)
 
 var helpCmd = &cobra.Command{
 	Use:   "help",

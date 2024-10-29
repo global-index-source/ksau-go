@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/global-index-source/ksau-go/internal"
+
 	"github.com/spf13/cobra"
 )
+
+var executableName string = internal.GetExecutableName()
 
 var rootCmd = &cobra.Command{
 	Use:   "ksau",
 	Short: "A versatile tool for managing file uploads and remote configurations",
-	Long: `ksau is a command-line application designed to simplify file uploads and manage remote configurations.
+	Long: fmt.Sprintf(`ksau is a command-line application designed to simplify file uploads and manage remote configurations.
 It provides various commands to upload files, list available remotes, refresh configurations, and update the tool itself.
-Use the 'ksau help' command to see detailed usage information and examples.`,
+Use the '%s help' command to see detailed usage information and examples.`, executableName),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			helpCmd.Run(cmd, args) // No subcommand provided, show help message
@@ -33,6 +37,8 @@ func init() {
 	rootCmd.SilenceErrors = true
 }
 
+var invalidCommandMessage string = fmt.Sprintf("Invalid command. Use '%s help' for usage information.", executableName)
+
 // Execute initializes the CLI and adds all subcommands
 func Execute() {
 	// Add subcommands here
@@ -40,7 +46,7 @@ func Execute() {
 	rootCmd.AddCommand(helpCmd) // Help command
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println("Invalid command. Use 'ksau help' for usage information.")
+		fmt.Println(invalidCommandMessage)
 		os.Exit(1)
 	}
 }
