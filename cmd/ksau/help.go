@@ -7,28 +7,27 @@ import (
 )
 
 var helpMessage string = fmt.Sprintf(`
-Usage : %s [-r] [OPTION] [FILE]
+Usage : %s [-rqc] [SUBCOMMAND]
 
 Options:
     -r    Add random string to the end of filename (but before extension) when uploading
     -q    Suppress all output, printing only the link after upload is finished
     -c    Upload to a specific remote
 
-    Note that all options must be passed BEFORE other arguments.
+Subcommands:
+upload [-rqc] <FILE> [FOLDER]: Uploads the given file to the given folder
+                               on index.
 
-upload [-r] [FILE] [FOLDER] : Uploads the given file to the given folder
-                              on index.
+list                         : List available remotes and show their usage info.
 
-list                        : List available remotes and show their usage info.
+refresh                      : Refresh rclone config. Try this if upload does not work.
 
-refresh                     : Refresh rclone config. Try this if upload does not work.
+update                       : Fetch and install latest version.
+                               available.
 
-update                      : Fetch and install latest version.
-                              available.
+help                         : Show this message.
 
-help                        : Show this message.
-
-version                     : Show ksau version.
+version                      : Show ksau version.
 
 Example: %s upload test.txt Public
 Note: Each time ksau is run, even if not for uploading, it will attempt to refresh
