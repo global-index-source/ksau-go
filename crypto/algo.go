@@ -33,7 +33,7 @@ func Encrypt(text string) []byte {
 	return armorbytes
 }
 
-func Decrypt(data []byte) string {
+func Decrypt(data []byte) []byte {
 	decryptionHandler, err := pgp.Decryption().DecryptionKey(getPrivateKey()).New()
 	if err != nil {
 		panic("Failed to create decryption handler")
@@ -44,5 +44,5 @@ func Decrypt(data []byte) string {
 		panic("Failed to decrypt data")
 	}
 
-	return string(decrypted.Bytes())
+	return decrypted.Bytes()
 }
