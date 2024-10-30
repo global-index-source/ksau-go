@@ -44,6 +44,7 @@ func Execute() {
 	// Add subcommands here
 	// rootCmd.AddCommand(uploadCmd) // Example
 	rootCmd.AddCommand(helpCmd) // Help command
+	rootCmd.AddCommand(refreshCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(invalidCommandMessage)

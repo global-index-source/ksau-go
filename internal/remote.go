@@ -2,10 +2,8 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
-	"os"
 )
 
 const ConfigFileName string = ".ksau.json"
@@ -33,25 +31,10 @@ func check(err error, msg string) {
 	}
 }
 
-// Not to be exported
-func getUserConfigFile() (*os.File, error) {
-	userHome, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("cannot find your home dir")
-	}
-
-	userConfigFile, err := os.OpenFile(userHome+"/"+ConfigFileName, os.O_RDWR, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("error while trying to open your config file: %s", err.Error())
-	}
-
-	return userConfigFile, nil
-}
-
 // Returns a pointer to a an array of Remote (Remotes type alias), with config file already parsed for you
 // TODO(hakimi): Do not just panic but instead return relevant error, so that CLI part can let the user know what went wrong
 func GetRemotes() (*Remotes, error) {
-	userConfigFile, err := getUserConfigFile()
+	userConfigFile, err := GetUserConfigFile()
 	check(err, err.Error())
 	defer userConfigFile.Close()
 
