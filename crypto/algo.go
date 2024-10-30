@@ -3,8 +3,6 @@ package crypto
 import "github.com/ProtonMail/gopenpgp/v3/crypto"
 
 var pgp *crypto.PGPHandle = crypto.PGP()
-var passphrase string = "placeholder"
-var privkey string = "placeholder"
 
 func getPrivateKey() *crypto.Key {
 	key, err := crypto.NewPrivateKeyFromArmored(privkey, []byte(passphrase))
