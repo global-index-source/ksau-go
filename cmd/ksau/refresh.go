@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/global-index-source/ksau-go/crypto"
 	"github.com/global-index-source/ksau-go/internal"
 	"github.com/spf13/cobra"
 )
@@ -42,9 +41,7 @@ func downloadAndWriteConfigFromGist() error {
 		return err
 	}
 
-	var decryptedConfigData []byte = crypto.Decrypt(configData)
-
-	_, err = configFile.Write(decryptedConfigData)
+	_, err = configFile.Write(configData)
 	if err != nil {
 		return err
 	}
