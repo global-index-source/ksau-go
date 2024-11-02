@@ -17,6 +17,11 @@ type Remote struct {
 	DriveId      string `json:"drive_id"`
 	DriveType    string `json:"drive_type"`
 
+	// Also present in original ksau, just wasn't obvious at first sight.
+	// this allows file to be uploaded not to root of the drive,
+	// but rather to this particular folder.
+	Prefix string `json:"prefix"`
+
 	// Token stuff
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
