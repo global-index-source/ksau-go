@@ -2,8 +2,10 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"slices"
 )
 
 const ConfigFileName string = ".ksau.json"
@@ -46,4 +48,18 @@ func GetRemotes() (*Remotes, error) {
 	check(err, err.Error())
 
 	return remotes, nil
+}
+
+// Return a pointer to a remote, provided that the remote name given exists.
+func GetRemote(name string) (*Remote, error) {
+	remotes, err := GetRemotes()
+	check(err, err.Error())
+
+	var remoteNames []string = make([]string, len(*remotes))
+	if !slices.Contains(remoteNames, name) {
+		return nil, fmt.Errorf("Remote '%s' remote does not exist", name)
+	}
+
+	var remote Remote = (*remotes)[name]
+	return &remote, nil
 }
