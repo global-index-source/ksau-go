@@ -51,7 +51,7 @@ func GetRemotes() (*Remotes, error) {
 
 	var decrypted string = crypto.Decrypt(encryptedUserConfigFileContent)
 
-	var remotes *Remotes
+	var remotes *Remotes = &Remotes{}
 	err = json.Unmarshal([]byte(decrypted), remotes)
 	check(err, err.Error())
 
