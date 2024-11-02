@@ -42,7 +42,7 @@ func check(err error, msg string) {
 // Returns a pointer to a an array of Remote (Remotes type alias), with config file already parsed for you
 // TODO(hakimi): Do not just panic but instead return relevant error, so that CLI part can let the user know what went wrong
 func GetRemotes() (*Remotes, error) {
-	userConfigFile, err := GetUserConfigFile()
+	userConfigFile, err := GetUserConfigFile(true)
 	check(err, err.Error())
 	defer userConfigFile.Close()
 

@@ -36,7 +36,7 @@ func downloadAndWriteConfigFromGist() error {
 		return err
 	}
 
-	configFile, err := internal.GetUserConfigFile()
+	configFile, err := internal.GetUserConfigFile(false)
 	if err != nil {
 		return err
 	}
