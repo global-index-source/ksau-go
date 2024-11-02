@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/global-index-source/ksau-go/internal"
+	"github.com/goh-chunlin/go-onedrive/onedrive"
+	"golang.org/x/oauth2"
 
 	"github.com/spf13/cobra"
 )
@@ -43,11 +47,28 @@ var invalidCommandMessage string = fmt.Sprintf("Invalid command. Use '%s help' f
 func Execute() {
 	// Add subcommands here
 	// rootCmd.AddCommand(uploadCmd) // Example
-	rootCmd.AddCommand(helpCmd) // Help command
-	rootCmd.AddCommand(refreshCmd)
+	rootCmd.AddCommand(helpCmd)    // Help command
+	rootCmd.AddCommand(refreshCmd) // refresh command
+	rootCmd.AddCommand(uploadCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(invalidCommandMessage)
 		os.Exit(1)
 	}
+}
+
+func getClientAndContext(remote *internal.Remote) (*onedrive.Client, *context.Context) {
+	var ctx context.Context = context.Background()
+	var tokenSource oauth2.TokenSource = oauth2.StaticTokenSource(
+		&oauth2.Token{
+			AccessToken:  remote.AccessToken,
+			TokenType:    remote.TokenType,
+			RefreshToken: remote.RefreshToken,
+		},
+	)
+
+	var tokenClient *http.Client = oauth2.NewClient(ctx, tokenSource)
+	var client onedrive.Client = *onedrive.NewClient(tokenClient)
+
+	return &client, &ctx
 }
