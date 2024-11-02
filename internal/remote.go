@@ -3,10 +3,12 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/global-index-source/ksau-go/crypto"
 	"io"
 	"log"
+	"maps"
 	"slices"
+
+	"github.com/global-index-source/ksau-go/crypto"
 )
 
 const ConfigFileName string = ".ksau.json"
@@ -26,7 +28,7 @@ type Remote struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	TokenType    string `json:"token_type"`
-	Expiry       int    `json:"expiry"`
+	Expiry       string `json:"expiry"`
 }
 
 // The (encrypted) json config file that we'll be shipping.
@@ -43,17 +45,20 @@ func check(err error, msg string) {
 // TODO(hakimi): Do not just panic but instead return relevant error, so that CLI part can let the user know what went wrong
 func GetRemotes() (*Remotes, error) {
 	userConfigFile, err := GetUserConfigFile(true)
-	check(err, err.Error())
+	check(err, "cannot get user's config file")
 	defer userConfigFile.Close()
 
 	encryptedUserConfigFileContent, err := io.ReadAll(userConfigFile)
-	check(err, err.Error())
+	check(err, "cannot read user's config file")
 
 	var decrypted string = crypto.Decrypt(encryptedUserConfigFileContent)
 
 	var remotes *Remotes = &Remotes{}
 	err = json.Unmarshal([]byte(decrypted), remotes)
-	check(err, err.Error())
+	if err != nil {
+		fmt.Println(err.Error())
+		panic(err.Error())
+	}
 
 	return remotes, nil
 }
@@ -61,9 +66,13 @@ func GetRemotes() (*Remotes, error) {
 // Return a pointer to a remote, provided that the remote name given exists.
 func GetRemote(name string) (*Remote, error) {
 	remotes, err := GetRemotes()
-	check(err, err.Error())
+	check(err, "could not get remotes")
 
 	var remoteNames []string = make([]string, len(*remotes))
+	for key := range maps.Keys(*remotes) {
+		remoteNames = append(remoteNames, key)
+	}
+
 	if !slices.Contains(remoteNames, name) {
 		return nil, fmt.Errorf("Remote '%s' remote does not exist", name)
 	}
