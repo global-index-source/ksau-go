@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/global-index-source/ksau-go/crypto"
 	"io"
 	"log"
 	"slices"
@@ -40,11 +41,13 @@ func GetRemotes() (*Remotes, error) {
 	check(err, err.Error())
 	defer userConfigFile.Close()
 
-	userConfigFileContent, err := io.ReadAll(userConfigFile)
+	encryptedUserConfigFileContent, err := io.ReadAll(userConfigFile)
 	check(err, err.Error())
 
+	var decrypted string = crypto.Decrypt(encryptedUserConfigFileContent)
+
 	var remotes *Remotes
-	err = json.Unmarshal(userConfigFileContent, remotes)
+	err = json.Unmarshal([]byte(decrypted), remotes)
 	check(err, err.Error())
 
 	return remotes, nil
