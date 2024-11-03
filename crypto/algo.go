@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package crypto
 
 import "github.com/ProtonMail/gopenpgp/v3/crypto"
