@@ -4,61 +4,25 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/global-index-source/ksau-go/internal"
+
 	"github.com/spf13/cobra"
 )
 
-// This always points to the latest file
-const gistUrl string = "https://gist.githubusercontent.com/hakimifr/d964b07dff17ff7dc80d39c93ecdfdeb/raw/ksau.json.asc"
-
-// hell
-// Download a given url and return a File pointer
-// not meant for large files
-func download(url string) ([]byte, error) {
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	responseInByteSlice, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseInByteSlice, nil
-}
-
-func downloadAndWriteConfigFromGist() error {
-	configData, err := download(gistUrl)
-	if err != nil {
-		return err
-	}
-
-	configFile, err := internal.GetUserConfigFile(false)
-	if err != nil {
-		return err
-	}
-
-	_, err = configFile.Write(configData)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+// GIST_URL is the URL to download the latest tokens.
+// This URL should point to a JSON file containing the tokens.
+const GIST_URL string = "https://gist.githubusercontent.com/hakimifr/d964b07dff17ff7dc80d39c93ecdfdeb/raw/ksau.json.asc"
 
 func refreshCmdCallback(cmd *cobra.Command, args []string) {
 	fmt.Println("Updating tokens...")
 
-	var err error = downloadAndWriteConfigFromGist()
+	var err error = internal.DownloadConfig(GIST_URL)
 	if err != nil {
 		panic("Error while updating tokens: " + err.Error())
 	}
 
+	fmt.Println("Tokens updated successfully.") // Make sure to let the user know that the tokens have been updated.
 }
 
 var refreshCmd *cobra.Command = &cobra.Command{
