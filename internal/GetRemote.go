@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"maps"
 	"slices"
 
@@ -35,12 +34,6 @@ type Remote struct {
 // It will contain all three remotes, and their respective id, token, etc.
 type Remotes map[string]Remote
 
-func check(err error, msg string) {
-	if err != nil {
-		log.Panic(msg)
-	}
-}
-
 // Returns a pointer to a an array of Remote (Remotes type alias), with config file already parsed for you
 func GetRemotes() (*Remotes, error) {
 	userConfigFile, err := GetUserConfigFile(true)
@@ -68,7 +61,9 @@ func GetRemotes() (*Remotes, error) {
 // Return a pointer to a remote, provided that the remote name given exists.
 func GetRemote(name string) (*Remote, error) {
 	remotes, err := GetRemotes()
-	check(err, "could not get remotes")
+	if err != nil {
+		return nil, fmt.Errorf("could not get remotes: %s", err.Error())
+	}
 
 	var remoteNames []string = make([]string, len(*remotes))
 	for key := range maps.Keys(*remotes) {
@@ -76,7 +71,7 @@ func GetRemote(name string) (*Remote, error) {
 	}
 
 	if !slices.Contains(remoteNames, name) {
-		return nil, fmt.Errorf("Remote '%s' remote does not exist", name)
+		return nil, fmt.Errorf("remote '%s' remote does not exist", name)
 	}
 
 	var remote Remote = (*remotes)[name]
