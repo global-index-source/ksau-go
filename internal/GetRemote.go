@@ -13,8 +13,6 @@ import (
 	"github.com/global-index-source/ksau-go/crypto"
 )
 
-const ConfigFileName string = ".ksau.json"
-
 type Remote struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
@@ -44,22 +42,24 @@ func check(err error, msg string) {
 }
 
 // Returns a pointer to a an array of Remote (Remotes type alias), with config file already parsed for you
-// TODO(hakimi): Do not just panic but instead return relevant error, so that CLI part can let the user know what went wrong
 func GetRemotes() (*Remotes, error) {
 	userConfigFile, err := GetUserConfigFile(true)
-	check(err, "cannot get user's config file")
+	if err != nil {
+		return nil, fmt.Errorf("cannot get user's config file: %w", err)
+	}
 	defer userConfigFile.Close()
 
 	encryptedUserConfigFileContent, err := io.ReadAll(userConfigFile)
-	check(err, "cannot read user's config file")
+	if err != nil {
+		return nil, fmt.Errorf("cannot read user's config file: %w", err)
+	}
 
 	var decrypted string = crypto.Decrypt(encryptedUserConfigFileContent)
 
 	var remotes *Remotes = &Remotes{}
 	err = json.Unmarshal([]byte(decrypted), remotes)
 	if err != nil {
-		fmt.Println(err.Error())
-		panic(err.Error())
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
 	return remotes, nil
