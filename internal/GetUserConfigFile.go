@@ -28,7 +28,7 @@ func GetUserConfigFile(readOnly bool) (*os.File, error) {
 
 	userConfigFile, err := os.OpenFile(userConfigFilePath, fileAccessPermissions[readOnly], 0644)
 	if err != nil {
-		return nil, fmt.Errorf("error while trying to open your config file: %s", err.Error())
+		return nil, fmt.Errorf("error while trying to open your config file: %w", err)
 	}
 
 	return userConfigFile, nil

@@ -62,7 +62,7 @@ func GetRemotes() (*Remotes, error) {
 func GetRemote(name string) (*Remote, error) {
 	remotes, err := GetRemotes()
 	if err != nil {
-		return nil, fmt.Errorf("could not get remotes: %s", err.Error())
+		return nil, fmt.Errorf("could not get remotes: %w", err)
 	}
 
 	var remoteNames []string = make([]string, len(*remotes))
