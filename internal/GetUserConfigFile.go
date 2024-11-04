@@ -5,7 +5,15 @@ package internal
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+// File access permissions based on the read-only flag
+// Keep it all in one place for easier maintenance
+var fileAccessPermissions = map[bool]int{
+	true:  os.O_RDONLY,
+	false: os.O_RDWR | os.O_CREATE | os.O_TRUNC,
+}
 
 func GetUserConfigFile(readOnly bool) (*os.File, error) {
 	userHome, err := os.UserHomeDir()
@@ -13,12 +21,9 @@ func GetUserConfigFile(readOnly bool) (*os.File, error) {
 		return nil, fmt.Errorf("cannot find your home dir")
 	}
 
-	var userConfigFile *os.File
-	if readOnly {
-		userConfigFile, err = os.OpenFile(userHome+"/"+ConfigFileName, os.O_RDONLY, 0644)
-	} else {
-		userConfigFile, err = os.OpenFile(userHome+"/"+ConfigFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	}
+	userConfigFilePath := filepath.Join(userHome, ConfigFileName)
+
+	userConfigFile, err := os.OpenFile(userConfigFilePath, fileAccessPermissions[readOnly], 0644)
 	if err != nil {
 		return nil, fmt.Errorf("error while trying to open your config file: %s", err.Error())
 	}
