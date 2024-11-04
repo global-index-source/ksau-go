@@ -1,5 +1,6 @@
 ### our own ignored files ###
 crypto/credentials.go
+ksau-go*
 
 ### dotenv ###
 .env
