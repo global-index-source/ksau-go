@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/global-index-source/ksau-go/internal"
-	"github.com/goh-chunlin/go-onedrive/onedrive"
-	"golang.org/x/oauth2"
 
+	"github.com/goh-chunlin/go-onedrive/onedrive"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 var executableName string = internal.GetExecutableName()

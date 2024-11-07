@@ -3,12 +3,10 @@
 package cmd
 
 import (
-	// "github.com/goh-chunlin/go-onedrive/onedrive"
-	// "golang.org/x/oauth2"
-
 	"fmt"
 
 	"github.com/global-index-source/ksau-go/internal"
+
 	"github.com/spf13/cobra"
 )
 
@@ -44,14 +42,3 @@ var uploadCmd *cobra.Command = &cobra.Command{
 
 	Run: uploadCmdCallback,
 }
-
-// ctx := context.Background()
-// ts := oauth2.StaticTokenSource(
-// 	&oauth2.Token{AccessToken: "..."},
-// )
-// tc := oauth2.NewClient(ctx, ts)
-
-// client := onedrive.NewClient(tc)
-
-// // list all OneDrive drives for the current logged in user
-// drives, err := client.Drives.List(ctx)
