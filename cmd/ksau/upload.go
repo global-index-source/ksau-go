@@ -51,6 +51,9 @@ func uploadCmdCallback(cmd *cobra.Command, args []string) {
 		fileName = fmt.Sprintf("%s-%s%s", base, randomString, ext)
 	}
 
+	// Log and let the user know about the new file name
+	fmt.Printf("File will be uploaded as: %s\n", fileName)
+
 	remote, err := internal.GetRemote(remoteName)
 	if err != nil {
 		fmt.Printf("error: %s\n", err.Error())
