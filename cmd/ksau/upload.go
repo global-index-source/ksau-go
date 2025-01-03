@@ -18,8 +18,8 @@ func init() {
 }
 
 func uploadCmdCallback(cmd *cobra.Command, args []string) {
-	if len(args) > 3 {
-		fmt.Printf("%s: Cannot have more than three arguments", internal.GetFunctionName())
+	if len(args) > 3 || len(args) < 2 {
+		fmt.Printf("%s: invalid number of arguments: %d", internal.GetFunctionName(), len(args))
 		return
 	}
 
