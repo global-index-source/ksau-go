@@ -78,11 +78,6 @@ func runUpload(cmd *cobra.Command, args []string) {
 		remoteFilePath = filepath.Join(remoteFolder, remoteFileName)
 	}
 
-	// Add root folder for the selected remote configuration
-	rootFolder := getRootFolder(remoteConfig)
-	fullRemotePath := filepath.Join(rootFolder, remoteFilePath)
-	fmt.Printf("Full remote path: %s\n", fullRemotePath)
-
 	// Read the rclone config file
 	configData, err := getConfigData()
 	if err != nil {
@@ -95,6 +90,12 @@ func runUpload(cmd *cobra.Command, args []string) {
 		fmt.Println("Failed to initialize client:", err)
 		return
 	}
+
+	// Add root folder for the selected remote configuration
+	// rootFolder := getRootFolder(remoteConfig)
+	rootFolder := client.RemoteRootFolder
+	fullRemotePath := filepath.Join(rootFolder, remoteFilePath)
+	fmt.Printf("Full remote path: %s\n", fullRemotePath)
 
 	// Prepare upload parameters
 	params := azure.UploadParams{
@@ -118,7 +119,7 @@ func runUpload(cmd *cobra.Command, args []string) {
 		fmt.Println("File uploaded successfully.")
 
 		// Generate download URL
-		baseURL := getBaseURL(remoteConfig)
+		baseURL := client.RemoteBaseUrl
 		urlPath := strings.ReplaceAll(filepath.Join(remoteFolder, localFileName), "\\", "/")
 		if remoteFileName != "" {
 			urlPath = filepath.Join(remoteFolder, remoteFileName)

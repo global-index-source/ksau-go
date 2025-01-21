@@ -28,21 +28,6 @@ const (
 	ColorRed    = "\033[31m"
 )
 
-// Root folders for each remote configuration
-// TODO: Do not hardcode this and instead parse from rclone.conf
-var rootFolders = map[string]string{
-	"hakimionedrive": "Public",
-	"oned":           "",
-	"saurajcf":       "MY_BOMT_STUFFS",
-}
-
-// Base URLs for each remote configuration
-var baseURLs = map[string]string{
-	"hakimionedrive": "https://onedrive-vercel-index-kohl-eight-30.vercel.app",
-	"oned":           "https://index.sauraj.eu.org",
-	"saurajcf":       "https://my-index-azure.vercel.app",
-}
-
 // getConfigData reads the rclone.conf file from the user's home directory
 func getConfigData() ([]byte, error) {
 	home, err := os.UserHomeDir()
@@ -76,26 +61,6 @@ func getChunkSize(fileSize int64) int64 {
 	default:
 		return 16 * 1024 * 1024 // 16 MB for very large files
 	}
-}
-
-// getRootFolder returns the root folder for a given remote configuration
-func getRootFolder(remoteConfig string) string {
-	rootFolder, exists := rootFolders[remoteConfig]
-	if !exists {
-		fmt.Printf("Error: no root folder defined for remote-config '%s'\n", remoteConfig)
-		return ""
-	}
-	return rootFolder
-}
-
-// getBaseURL returns the base URL for a given remote configuration
-func getBaseURL(remoteConfig string) string {
-	baseURL, exists := baseURLs[remoteConfig]
-	if !exists {
-		fmt.Printf("Error: no base URL defined for remote-config '%s'\n", remoteConfig)
-		return ""
-	}
-	return baseURL
 }
 
 // QuickXorHash calculates the QuickXorHash for a file
