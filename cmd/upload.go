@@ -119,7 +119,7 @@ func runUpload(cmd *cobra.Command, args []string) {
 
 		// Generate download URL
 		baseURL := getBaseURL(remoteConfig)
-		urlPath := filepath.Join(remoteFolder, localFileName)
+		urlPath := strings.ReplaceAll(filepath.Join(remoteFolder, localFileName), "\\", "/")
 		if remoteFileName != "" {
 			urlPath = filepath.Join(remoteFolder, remoteFileName)
 		}

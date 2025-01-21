@@ -29,6 +29,7 @@ const (
 )
 
 // Root folders for each remote configuration
+// TODO: Do not hardcode this and instead parse from rclone.conf
 var rootFolders = map[string]string{
 	"hakimionedrive": "Public",
 	"oned":           "",
