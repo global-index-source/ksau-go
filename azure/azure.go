@@ -1,3 +1,52 @@
+// Package azure provides functionality for interacting with Microsoft Azure services,
+// specifically focusing on OneDrive and SharePoint storage operations through Microsoft Graph API.
+//
+// The package implements various features including:
+//   - Authentication and token management for Azure services
+//   - Large file uploads with chunked transfer and parallel processing
+//   - File metadata retrieval and management
+//   - Storage quota information
+//   - Hash verification
+//   - Integration with rclone configuration
+//
+// Core Components:
+//
+// AzureClient: The main client struct that handles authentication and API operations.
+// It manages access tokens, refresh tokens, and provides methods for file operations.
+//
+// UploadParams: Configuration struct for customizing file upload behavior including
+// chunk size, parallel processing, and retry mechanisms.
+//
+// DriveQuota: Represents storage quota information including total, used, and remaining space.
+//
+// Key Features:
+//   - Automatic token refresh and management
+//   - Parallel chunk upload with configurable workers
+//   - Retry mechanism for failed operations
+//   - Progress tracking and error handling
+//   - Storage quota management
+//   - QuickXorHash verification
+//
+// Usage Example:
+//
+//	client, err := NewAzureClientFromRcloneConfigData(configData, "remote")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	params := UploadParams{
+//	    FilePath: "local/path/file.txt",
+//	    RemoteFilePath: "remote/path/file.txt",
+//	    ChunkSize: 10 * 1024 * 1024, // 10MB chunks
+//	    ParallelChunks: 4,
+//	    MaxRetries: 3,
+//	    RetryDelay: time.Second * 5,
+//	}
+//
+//	fileID, err := client.Upload(httpClient, params)
+//
+// The package is designed to handle large file transfers efficiently and provides
+// robust error handling and retry mechanisms for reliable file operations.
 package azure
 
 import (
@@ -14,7 +63,18 @@ import (
 	"time"
 )
 
-// AzureClient represents the Azure connection with credentials
+// AzureClient represents a client for interacting with Microsoft Azure services.
+// It manages authentication credentials and access tokens for Azure API operations.
+//
+// Fields:
+//   - ClientID: The application (client) ID registered in Azure Active Directory
+//   - ClientSecret: The client secret key for authentication
+//   - AccessToken: The current OAuth access token for API requests
+//   - RefreshToken: Token used to obtain a new access token when expired
+//   - Expiration: Timestamp indicating when the current access token expires
+//   - DriveID: The identifier for the specific OneDrive instance
+//   - DriveType: The type of drive (personal, business, sharepoint)
+//   - mu: Mutex for handling concurrent access to client fields
 type AzureClient struct {
 	ClientID     string
 	ClientSecret string
@@ -26,7 +86,22 @@ type AzureClient struct {
 	mu           sync.Mutex
 }
 
-// NewAzureClientFromRcloneConfigData initializes the AzureClient from embedded rclone config data
+// NewAzureClientFromRcloneConfigData creates a new AzureClient instance using rclone configuration data.
+// It takes a byte slice containing rclone config data and a remote configuration name as input.
+//
+// The function parses the rclone configuration and extracts necessary Azure credentials including:
+// - Client ID and Secret
+// - Access and Refresh tokens
+// - Token expiration time
+// - Drive ID and Drive type
+//
+// Parameters:
+//   - configData: []byte containing the rclone configuration data
+//   - remoteConfig: string specifying which remote configuration to use
+//
+// Returns:
+//   - *AzureClient: Pointer to initialized AzureClient instance
+//   - error: Error if configuration parsing or client creation fails
 func NewAzureClientFromRcloneConfigData(configData []byte, remoteConfig string) (*AzureClient, error) {
 	//fmt.Println("Reading rclone config from embedded data for remote:", remoteConfig)
 	configMap, err := ParseRcloneConfigData(configData, remoteConfig)
@@ -65,7 +140,20 @@ func NewAzureClientFromRcloneConfigData(configData []byte, remoteConfig string) 
 	return &client, nil
 }
 
-// ParseRcloneConfigData parses the rclone configuration data and extracts key-value pairs for the specified remote
+// ParseRcloneConfigData parses rclone configuration data from a byte slice for a specific remote configuration.
+//
+// Parameters:
+//   - configData: A byte slice containing the rclone configuration data to parse
+//   - remoteConfig: The name of the remote configuration section to extract
+//
+// Returns:
+//   - map[string]string: A map containing the key-value pairs from the specified remote configuration section
+//   - error: An error if no configuration is found for the specified remote, nil otherwise
+//
+// The function reads the configuration data line by line, identifying sections marked with [] brackets.
+// When the specified remoteConfig section is found, it extracts key-value pairs separated by '='
+// and stores them in a map. Comments (lines starting with #) and empty lines are ignored.
+// If no configuration is found for the specified remote, it returns an error.
 func ParseRcloneConfigData(configData []byte, remoteConfig string) (map[string]string, error) {
 	//fmt.Println("Parsing rclone config data for remote:", remoteConfig)
 	content := string(configData)
@@ -101,7 +189,21 @@ func ParseRcloneConfigData(configData []byte, remoteConfig string) (map[string]s
 	return configMap, nil
 }
 
-// EnsureTokenValid checks and refreshes the access token if expired
+// EnsureTokenValid ensures the Azure access token is valid by checking its expiration
+// and refreshing it if necessary. It uses a mutex to ensure thread-safe token updates.
+//
+// The function performs the following steps:
+// 1. Checks if the current token is still valid
+// 2. If expired, requests a new token using the refresh token
+// 3. Updates the client's access token, refresh token, and expiration time
+//
+// Parameters:
+//   - httpClient: *http.Client - The HTTP client used to make the token refresh request
+//
+// Returns:
+//   - error: Returns nil if token is valid or successfully refreshed, error otherwise
+//
+// Thread-safety: This method is thread-safe as it uses a mutex to protect token updates.
 func (client *AzureClient) EnsureTokenValid(httpClient *http.Client) error {
 	client.mu.Lock()
 	defer client.mu.Unlock()
@@ -150,7 +252,29 @@ func (client *AzureClient) EnsureTokenValid(httpClient *http.Client) error {
 	return nil
 }
 
-// Upload uploads a file to OneDrive using parallel chunk uploads
+// Upload performs a large file upload to Azure storage using chunked upload with parallel processing.
+// It creates an upload session, splits the file into chunks, and uploads them in parallel using a worker pool.
+//
+// Parameters:
+//   - httpClient: The HTTP client to use for requests
+//   - params: UploadParams struct containing:
+//   - FilePath: Local path of file to upload
+//   - RemoteFilePath: Destination path in Azure storage
+//   - ChunkSize: Size of each upload chunk in bytes
+//   - ParallelChunks: Number of chunks to upload in parallel
+//   - MaxRetries: Maximum number of retry attempts per chunk
+//   - RetryDelay: Delay between retry attempts
+//
+// Returns:
+//   - string: The file ID of the uploaded file
+//   - error: Any error that occurred during upload
+//
+// The function implements the following features:
+//   - Automatic token refresh
+//   - Parallel chunk upload using worker pools
+//   - Configurable chunk size and parallel upload count
+//   - Retry mechanism for failed chunk uploads
+//   - Progress tracking and error handling
 func (client *AzureClient) Upload(httpClient *http.Client, params UploadParams) (string, error) {
 	fmt.Println("Starting file upload with upload session...")
 
@@ -248,7 +372,20 @@ func (client *AzureClient) Upload(httpClient *http.Client, params UploadParams) 
 
 }
 
-// getFileID retrieves the file ID for a given remote path
+// getFileID retrieves the unique identifier of a file from Microsoft OneDrive using the Microsoft Graph API.
+// It takes an HTTP client and the remote path of the file as parameters.
+//
+// Parameters:
+//   - httpClient: *http.Client - The HTTP client used to make the request
+//   - remotePath: string - The path to the file in OneDrive
+//
+// Returns:
+//   - string: The unique identifier of the file
+//   - error: An error if the request fails, if the file is not found, or if the response cannot be parsed
+//
+// The function makes a GET request to the Microsoft Graph API, authenticating with the client's access token.
+// It expects a JSON response containing the file's metadata, from which it extracts the ID.
+// If the file is not found or any other error occurs during the process, it returns an appropriate error.
 func (client *AzureClient) getFileID(httpClient *http.Client, remotePath string) (string, error) {
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/me/drive/root:/%s", remotePath)
 	req, err := http.NewRequest("GET", url, nil)
@@ -284,7 +421,21 @@ func (client *AzureClient) getFileID(httpClient *http.Client, remotePath string)
 	return metadata.ID, nil
 }
 
-// createUploadSession creates an upload session for the file
+// createUploadSession creates an upload session for a large file upload to OneDrive/SharePoint through Microsoft Graph API.
+// It takes an HTTP client, the remote path where the file will be stored, and an access token for authentication.
+//
+// Parameters:
+//   - httpClient: *http.Client - The HTTP client to make the request
+//   - remotePath: string - The destination path in OneDrive where the file will be uploaded
+//   - accessToken: string - OAuth2 access token for Microsoft Graph API authentication
+//
+// Returns:
+//   - string: The upload URL to be used for subsequent chunk uploads
+//   - error: An error object if the operation fails, nil otherwise
+//
+// The function implements Microsoft Graph API's large file upload protocol by creating
+// an upload session with conflict behavior set to "rename" if a file with the same name exists.
+// It returns an upload URL that can be used to upload the file in chunks.
 func (client *AzureClient) createUploadSession(httpClient *http.Client, remotePath string, accessToken string) (string, error) {
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/me/drive/root:/%s:/createUploadSession", remotePath)
 	requestBody := map[string]interface{}{
@@ -323,7 +474,24 @@ func (client *AzureClient) createUploadSession(httpClient *http.Client, remotePa
 	return response.UploadUrl, nil
 }
 
-// uploadChunk uploads a single chunk of the file
+// uploadChunk uploads a single chunk of data to Azure Blob Storage using the provided URL.
+// It takes an HTTP client, the upload URL, the chunk data, start and end byte positions,
+// and the total file size.
+//
+// Parameters:
+//   - httpClient: The HTTP client to use for the request
+//   - uploadURL: The URL to upload the chunk to
+//   - chunk: The byte slice containing the chunk data
+//   - start: The starting byte position of this chunk
+//   - end: The ending byte position of this chunk
+//   - totalSize: The total size of the complete file
+//
+// Returns:
+//   - bool: true if upload was successful (status 201 Created or 202 Accepted)
+//   - error: nil if successful, otherwise contains the error details with response body
+//
+// The function sets the Content-Range header according to Azure Blob Storage requirements
+// and performs the upload using a PUT request.
 func (client *AzureClient) uploadChunk(httpClient *http.Client, uploadURL string, chunk []byte, start, end, totalSize int64) (bool, error) {
 	req, err := http.NewRequest("PUT", uploadURL, bytes.NewReader(chunk))
 	if err != nil {
@@ -347,7 +515,22 @@ func (client *AzureClient) uploadChunk(httpClient *http.Client, uploadURL string
 	return false, fmt.Errorf("failed to upload chunk, status: %d, response: %s", resp.StatusCode, responseBody)
 }
 
-// itemByPath retrieves the metadata of a folder by its path
+// itemByPath retrieves a DriveItem from Microsoft OneDrive by its file path.
+// It makes a GET request to the Microsoft Graph API using the provided HTTP client and access token.
+//
+// Parameters:
+//   - httpClient: An *http.Client to make the HTTP request
+//   - accessToken: A valid Microsoft Graph API access token
+//   - path: The file path in OneDrive to retrieve
+//
+// Returns:
+//   - *DriveItem: The retrieved drive item if successful
+//   - error: Any error encountered during the request or processing
+//
+// The function will return an error if:
+//   - The HTTP request fails
+//   - The response status code is not in the 2xx range
+//   - The response body cannot be decoded into a DriveItem
 func itemByPath(httpClient *http.Client, accessToken, path string) (*DriveItem, error) {
 	fmt.Println("Retrieving item by path:", path)
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/me/drive/root:/%s", path)
@@ -376,13 +559,23 @@ func itemByPath(httpClient *http.Client, accessToken, path string) (*DriveItem, 
 	return &item, nil
 }
 
-// DriveItem represents a file or folder item in the drive
+// DriveItem represents an item in a Microsoft OneDrive or SharePoint drive.
+// It contains basic properties such as the unique identifier and name of the item.
 type DriveItem struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// UploadParams represents the parameters for the upload operation
+// UploadParams contains configuration parameters for file upload operations to Azure Blob Storage.
+//
+// Fields:
+//   - FilePath: Local path of the file to be uploaded
+//   - RemoteFilePath: Destination path in Azure Blob Storage
+//   - ChunkSize: Size of each upload chunk in bytes
+//   - ParallelChunks: Number of chunks to upload concurrently
+//   - MaxRetries: Maximum number of retry attempts for failed uploads
+//   - RetryDelay: Duration to wait between retry attempts
+//   - AccessToken: Azure authentication token for the upload operation
 type UploadParams struct {
 	FilePath       string
 	RemoteFilePath string
@@ -393,7 +586,9 @@ type UploadParams struct {
 	AccessToken    string
 }
 
-// DriveQuota represents the quota information for a drive
+// DriveQuota represents storage quota information for a drive.
+// It contains details about the total storage space, used space,
+// remaining space, and space used by items in the recycle bin.
 type DriveQuota struct {
 	Total     int64 `json:"total"`
 	Used      int64 `json:"used"`
@@ -401,7 +596,19 @@ type DriveQuota struct {
 	Deleted   int64 `json:"deleted"`
 }
 
-// GetDriveQuota fetches the quota information for the drive
+// GetDriveQuota retrieves the quota information for the user's OneDrive storage using the Microsoft Graph API.
+// It returns a DriveQuota struct containing total storage space, used space, remaining space and deleted space in bytes.
+//
+// The function automatically ensures the access token is valid before making the request.
+// If any error occurs during the process (token validation, HTTP request, response parsing),
+// it returns nil for DriveQuota and the corresponding error.
+//
+// Parameters:
+//   - httpClient: *http.Client - The HTTP client to use for making the request
+//
+// Returns:
+//   - *DriveQuota: Contains quota information (total, used, remaining, and deleted space)
+//   - error: Any error encountered during the process
 func (client *AzureClient) GetDriveQuota(httpClient *http.Client) (*DriveQuota, error) {
 	// Ensure the access token is valid
 	if err := client.EnsureTokenValid(httpClient); err != nil {
@@ -448,7 +655,19 @@ func (client *AzureClient) GetDriveQuota(httpClient *http.Client) (*DriveQuota, 
 	}, nil
 }
 
-// formatBytes converts bytes to a human-readable format
+// formatBytes converts a size in bytes to a human-readable string representation.
+// It automatically chooses the appropriate unit (B, KiB, MiB, GiB, TiB, PiB, or EiB)
+// and formats the number with three decimal places.
+//
+// Parameters:
+//   - bytes: The size in bytes to be formatted
+//
+// Returns:
+//   - A string representing the size with the appropriate binary unit suffix
+//     For example:
+//   - 1024 bytes -> "1.000 KiB"
+//   - 1048576 bytes -> "1.000 MiB"
+//   - 2000000000 bytes -> "1.863 GiB"
 func formatBytes(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
@@ -462,7 +681,19 @@ func formatBytes(bytes int64) string {
 	return fmt.Sprintf("%.3f %ciB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
-// DisplayQuotaInfo displays the quota information for the drive
+// DisplayQuotaInfo prints quota information for a given remote drive to standard output.
+// It displays the remote name and formatted storage values for total, used, free and trashed space.
+//
+// Parameters:
+//   - remote: string representing the remote drive name/path
+//   - quota: pointer to DriveQuota struct containing storage quota information
+//
+// The output is formatted as follows:
+//   - Remote: <remote name>
+//   - Total: <formatted total space>
+//   - Used: <formatted used space>
+//   - Free: <formatted remaining space>
+//   - Trashed: <formatted deleted space>
 func DisplayQuotaInfo(remote string, quota *DriveQuota) {
 	fmt.Printf("Remote: %s\n", remote)
 	fmt.Printf("Total:   %s\n", formatBytes(quota.Total))
@@ -472,7 +703,27 @@ func DisplayQuotaInfo(remote string, quota *DriveQuota) {
 	fmt.Println()
 }
 
-// GetQuickXorHash retrieves the quickXorHash for a file from OneDrive
+// GetQuickXorHash retrieves the QuickXorHash value for a specified file from Microsoft Graph API.
+//
+// Parameters:
+//   - httpClient: *http.Client - The HTTP client used to make the request
+//   - fileID: string - The unique identifier of the file in Microsoft OneDrive
+//
+// Returns:
+//   - string: The QuickXorHash value of the file
+//   - error: An error object that indicates if the operation was unsuccessful
+//
+// The function performs the following steps:
+// 1. Validates the access token
+// 2. Makes a GET request to Microsoft Graph API to fetch file metadata
+// 3. Parses the response to extract the QuickXorHash value
+//
+// Error cases:
+//   - Invalid or expired access token
+//   - Failed HTTP request
+//   - Non-200 HTTP response
+//   - Missing QuickXorHash in metadata
+//   - JSON parsing errors
 func (client *AzureClient) GetQuickXorHash(httpClient *http.Client, fileID string) (string, error) {
 	// Ensure the access token is valid
 	if err := client.EnsureTokenValid(httpClient); err != nil {
