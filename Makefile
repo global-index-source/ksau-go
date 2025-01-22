@@ -23,6 +23,14 @@ build:
 	@echo "Building $(APP_NAME)..."
 	go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)
 
+# Only to be used in GitHub actions
+build_gh_actions:
+	@echo "notice: this is meant to be used in workflows"
+	go mod tidy
+	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-linux-amd64
+	GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-linux-arm64
+	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-windows-amd64
+
 # Run the application
 run:
 	@echo "Running $(APP_NAME)..."
@@ -42,9 +50,10 @@ version:
 # Help command
 help:
 	@echo "Makefile Commands:"
-	@echo "  all       - Build the application (default target)"
-	@echo "  build     - Build the application"
-	@echo "  run       - Run the application with dynamic values"
-	@echo "  clean     - Remove the built binary"
-	@echo "  version   - Show version, commit, and date info"
-	@echo "  help      - Show this help message"
+	@echo "  all               - Build the application (default target)"
+	@echo "  build             - Build the application"
+	@echo "  build_gh_actions  - Build for Linux and Windows (intended for GitHub actions)"
+	@echo "  run               - Run the application with dynamic values"
+	@echo "  clean             - Remove the built binary"
+	@echo "  version           - Show version, commit, and date info"
+	@echo "  help              - Show this help message"
