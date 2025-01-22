@@ -3,8 +3,8 @@ module github.com/ksauraj/ksau-oned-api
 go 1.23.4
 
 require (
-	github.com/rclone/rclone v1.65.2
-	github.com/spf13/cobra v1.8.0
+	github.com/rclone/rclone v1.69.0
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
