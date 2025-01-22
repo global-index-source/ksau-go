@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"time"
 
 	"github.com/ksauraj/ksau-oned-api/azure"
@@ -28,22 +30,37 @@ const (
 	ColorRed    = "\033[31m"
 )
 
-// getConfigData reads the rclone.conf file from the user's home directory
-func getConfigData() ([]byte, error) {
+// getConfigPath: get user's rclone config path. This function is not responsible
+// for checking if the file actually exist, and instead only returns OS-specific path.
+func getConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user home directory: %v", err)
+		return "", fmt.Errorf("failed to get user home dir: %w", err)
 	}
 
-	configPath := filepath.Join(home, ".config", "rclone", "rclone.conf")
+	var configPath string
+	// first let's determine what kind of OS we're in
+	if slices.Contains([]string{"android", "linux", "unix"}, runtime.GOOS) {
+		configPath = filepath.Join(home, ".config", "rclone", "rclone.conf")
+	} else if runtime.GOOS == "windows" {
+		configPath = filepath.Join(home, "AppData", "Roaming", "rclone", "rclone.conf")
+	} else {
+		return "", fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+	}
+
+	return configPath, nil
+}
+
+// getConfigData reads the rclone.conf file from the user's home directory
+func getConfigData() ([]byte, error) {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user's config file path: %w", err)
+	}
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		// Try Windows path if the Unix path fails
-		configPath = filepath.Join(home, "AppData", "Roaming", "rclone", "rclone.conf")
-		data, err = os.ReadFile(configPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read rclone config: %v", err)
-		}
+		return nil, fmt.Errorf("failed to read rclone config: %v", err)
 	}
 
 	return data, nil
