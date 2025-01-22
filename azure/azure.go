@@ -214,6 +214,7 @@ func ParseRcloneConfigData(configData []byte) ([]map[string]string, error) {
 		}
 	}
 
+	configMaps = append(configMaps, configMap)
 	return configMaps, nil
 }
 
