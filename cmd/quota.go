@@ -35,21 +35,22 @@ func runQuota(cmd *cobra.Command, args []string) {
 
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 
-	for _, remoteConfigMap := range rcloneConfigFile {
-		for remoteName := range remoteConfigMap {
-			client, err := azure.NewAzureClientFromRcloneConfigData(configData, remoteName)
-			if err != nil {
-				fmt.Printf("Failed to initialize client for remote '%s': %v\n", remoteName, err)
-				continue
-			}
+	availRemotes := azure.GetAvailableRemotes(&rcloneConfigFile)
 
-			quota, err := client.GetDriveQuota(httpClient)
-			if err != nil {
-				fmt.Printf("Failed to fetch quota information for remote '%s': %v\n", remoteName, err)
-				continue
-			}
-
-			azure.DisplayQuotaInfo(remoteName, quota)
+	for _, remoteName := range availRemotes {
+		fmt.Println("current remote:", remoteName)
+		client, err := azure.NewAzureClientFromRcloneConfigData(configData, remoteName)
+		if err != nil {
+			fmt.Printf("Failed to initialize client for remote '%s': %v\n", remoteName, err)
+			continue
 		}
+
+		quota, err := client.GetDriveQuota(httpClient)
+		if err != nil {
+			fmt.Printf("Failed to fetch quota information for remote '%s': %v\n", remoteName, err)
+			continue
+		}
+
+		azure.DisplayQuotaInfo(remoteName, quota)
 	}
 }
