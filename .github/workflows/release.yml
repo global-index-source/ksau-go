@@ -1,0 +1,92 @@
+name: Build, Tag, and Release Application
+
+on:
+  push:
+    tags:
+      - 'v*.*.*-*'
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.23.4'
+
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/.go/pkg/mod
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-go-mod-
+
+      - name: Build for GitHub Actions
+        run: make build_gh_actions
+
+      - name: Get Version from Makefile
+        id: get_version
+        run: |
+          VERSION=$(make -s version | grep 'Version:' | awk '{print $2}')
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Create or Update Git Tag
+        id: create_tag
+        uses: rickstaa/action-create-tag@v1.7.2
+        with:
+          tag: ${{ env.VERSION }}
+          message: "Release ${{ env.VERSION }}"
+          force_push_tag: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          body: |
+            A new release of the application is now available.
+            - Version: ${{ env.VERSION }}
+          draft: false
+          prerelease: ${{ env.PRE_RELEASE == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux AMD64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-linux-amd64
+          asset_name: ksau-go-linux-amd64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows AMD64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-windows-amd64
+          asset_name: ksau-go-windows-amd64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-linux-arm64
+          asset_name: ksau-go-linux-arm64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
