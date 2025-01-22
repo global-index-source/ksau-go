@@ -29,7 +29,7 @@ build_gh_actions:
 	go mod tidy
 	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-linux-amd64
 	GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-linux-arm64
-	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-windows-amd64
+	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(APP_NAME)-windows-amd64.exe
 
 # Run the application
 run:
