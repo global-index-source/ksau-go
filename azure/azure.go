@@ -229,9 +229,7 @@ func ParseRcloneConfigData(configData []byte) ([]map[string]string, error) {
 func GetAvailableRemotes(parsedRcloneConfig *[]map[string]string) []string {
 	var remotes []string
 	for _, elem := range *parsedRcloneConfig {
-		for key := range elem {
-			remotes = append(remotes, key)
-		}
+		remotes = append(remotes, elem["remote_name"])
 	}
 
 	return remotes
