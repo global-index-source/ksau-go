@@ -62,10 +62,14 @@ func getConfigData() ([]byte, error) {
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read rclone config: %v", err)
+		return nil, fmt.Errorf("failed to read rclone config: %w", err)
 	}
 
-	return crypto.Decrypt(data), nil
+	decryptedConfig, err := crypto.Decrypt(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt user's config file: %w", err)
+	}
+	return decryptedConfig, nil
 }
 
 // getChunkSize dynamically selects a chunk size based on the file size
