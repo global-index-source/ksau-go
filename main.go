@@ -1,6 +1,6 @@
 package main
 
-import "github.com/ksauraj/ksau-oned-api/cmd"
+import "github.com/global-index-source/ksau-go/cmd"
 
 func main() {
 	cmd.Execute()

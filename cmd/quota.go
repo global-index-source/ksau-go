@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ksauraj/ksau-oned-api/azure"
+	"github.com/global-index-source/ksau-go/azure"
 	"github.com/spf13/cobra"
 )
 

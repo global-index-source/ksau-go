@@ -11,7 +11,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/ksauraj/ksau-oned-api/azure"
+	"github.com/global-index-source/ksau-go/azure"
 	"github.com/rclone/rclone/backend/onedrive/quickxorhash"
 )
 
