@@ -29,7 +29,13 @@ jobs:
             ${{ runner.os }}-go-mod-
 
       - name: Build for GitHub Actions
-        run: make build_gh_actions
+        run: |
+          echo "$PRIVATE_PGP_KEY_CONTENT" >crypto/privkey.pem
+          echo "$PRIVATE_PGP_KEY_PASSPHRASE" >crypto/passphrase.txt
+          make build_gh_actions
+        env:
+          PRIVATE_PGP_KEY_CONTENT: ${{ secrets.PRIVATE_PGP_KEY_CONTENT }}
+          PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
 
       - name: Get Version from Makefile
         id: get_version
@@ -57,7 +63,7 @@ jobs:
             A new release of the application is now available.
             - Version: ${{ env.VERSION }}
           draft: false
-          prerelease: ${{ env.PRE_RELEASE == 'true' }}
+          prerelease: ${{ secrets.PRE_RELEASE == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
