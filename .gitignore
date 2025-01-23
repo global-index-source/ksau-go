@@ -1,2 +1,6 @@
 *.conf
 ksau-go*
+
+# Credentials
+crypto/privkey.pem
+crypto/passphrase.txt

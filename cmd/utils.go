@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/global-index-source/ksau-go/azure"
+	"github.com/global-index-source/ksau-go/crypto"
+
 	"github.com/rclone/rclone/backend/onedrive/quickxorhash"
 )
 
@@ -63,7 +65,7 @@ func getConfigData() ([]byte, error) {
 		return nil, fmt.Errorf("failed to read rclone config: %v", err)
 	}
 
-	return data, nil
+	return crypto.Decrypt(data), nil
 }
 
 // getChunkSize dynamically selects a chunk size based on the file size

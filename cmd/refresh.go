@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const DEFAULT_URL string = "https://gist.githubusercontent.com/hakimifr/aabebeea8c1ce0c5a6968fc0d78ed5ae/raw/rclone.conf"
+const DEFAULT_URL string = "https://gist.githubusercontent.com/hakimifr/34c579f9a35c9da400e4df1ac73cf795/raw/rclone.conf.asc"
 
 var customUrl string
 
