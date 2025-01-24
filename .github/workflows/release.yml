@@ -30,9 +30,12 @@ jobs:
 
       - name: Build for GitHub Actions
         run: |
-          echo "$PRIVATE_PGP_KEY_CONTENT" >crypto/privkey.pem
-          echo "$PRIVATE_PGP_KEY_PASSPHRASE" >crypto/passphrase.txt
+          set -e  # Exit immediately if any command fails
+          echo "$PRIVATE_PGP_KEY_CONTENT" > crypto/privkey.pem
+          echo "$PRIVATE_PGP_KEY_PASSPHRASE" > crypto/passphrase.txt
+          chmod 600 crypto/privkey.pem crypto/passphrase.txt  # Restrict file permissions
           make build_gh_actions
+          rm -f crypto/privkey.pem crypto/passphrase.txt  # Clean up sensitive files
         env:
           PRIVATE_PGP_KEY_CONTENT: ${{ secrets.PRIVATE_PGP_KEY_CONTENT }}
           PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
