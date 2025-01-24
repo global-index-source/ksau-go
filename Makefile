@@ -13,7 +13,7 @@ endif
 # Append coreutils.exe (has to be installed) on windows,
 # otherwise this will freeze make
 DATE := $(shell $(WINDOWS_SHENANIGANS) date -u +%Y-%m-%d)
-LDFLAGS := -X 'github.com/ksauraj/ksau-oned-api/cmd.Version=$(VERSION)' -X 'github.com/ksauraj/ksau-oned-api/cmd.Commit=$(COMMIT)' -X 'github.com/ksauraj/ksau-oned-api/cmd.Date=$(DATE)'
+LDFLAGS := -X 'github.com/global-index-source/ksau-go/cmd.Version=$(VERSION)' -X 'github.com/global-index-source/ksau-go/cmd.Commit=$(COMMIT)' -X 'github.com/global-index-source/ksau-go/cmd.Date=$(DATE)'
 
 # Default target
 all: build
