@@ -48,7 +48,10 @@ jobs:
             exit 1
           fi
           echo "$PRIVATE_PGP_KEY_PASSPHRASE" > crypto/passphrase.txt
-          chmod 600 crypto/privkey.pem crypto/passphrase.txt
+
+          tr -d '\n' < crypto/passphrase.txt > tmp
+          mv tmp crypto/passphrase.txt
+
           make build_gh_actions
           rm -f crypto/privkey.pem crypto/passphrase.txt
           
