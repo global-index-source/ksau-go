@@ -30,26 +30,27 @@ jobs:
 
       - name: Build for GitHub Actions
         env:
-          PRIVATE_PGP_KEY_CONTENT: ${{ secrets.PRIVATE_PGP_KEY_CONTENT }}
+          PRIVATE_GPG_KEY_GIST_URL: ${{ secrets.PRIVATE_GPG_KEY_GIST_URL }}
           PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
         run: |
           set -e  # Exit immediately if any command fails
-      
-          # Check if environment variables are not empty
-          if [ -z "$PRIVATE_PGP_KEY_CONTENT" ]; then
-            echo "Error: PRIVATE_PGP_KEY_CONTENT is empty or not set."
+          if [ -z "$PRIVATE_GPG_KEY_GIST_URL" ]; then
+            echo "Error: PRIVATE_GPG_KEY_GIST_URL is empty or not set."
             exit 1
           fi
           if [ -z "$PRIVATE_PGP_KEY_PASSPHRASE" ]; then
             echo "Error: PRIVATE_PGP_KEY_PASSPHRASE is empty or not set."
             exit 1
           fi
-          # Proceed with the build process
-          echo "$PRIVATE_PGP_KEY_CONTENT" > crypto/privkey.pem
+          curl -s "$PRIVATE_GPG_KEY_GIST_URL" -o crypto/privkey.pem
+          if [ ! -s crypto/privkey.pem ]; then
+            echo "Error: Failed to download the private GPG key from the Gist."
+            exit 1
+          fi
           echo "$PRIVATE_PGP_KEY_PASSPHRASE" > crypto/passphrase.txt
-          chmod 600 crypto/privkey.pem crypto/passphrase.txt  # Restrict file permissions
+          chmod 600 crypto/privkey.pem crypto/passphrase.txt
           make build_gh_actions
-          rm -f crypto/privkey.pem crypto/passphrase.txt  # Clean up sensitive files
+          rm -f crypto/privkey.pem crypto/passphrase.txt
           
       - name: Get Version from Makefile
         id: get_version
