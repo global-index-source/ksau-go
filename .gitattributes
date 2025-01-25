@@ -1,0 +1,5 @@
+# Set default behavior to automatically detect text files
+* text=auto
+
+# Ensure PowerShell scripts use CRLF line endings
+*.ps1 text eol=crlf

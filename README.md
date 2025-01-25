@@ -2,6 +2,12 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.23.4-blue)](https://golang.org/doc/go1.23)
 
+## Installation
+For Windows, run:
+```
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/global-index-source/ksau-go/master/install.ps1").Content
+```
+
 ## Build Instruction
 ### To build this project, you need two important thing:
 1. Private PGP key used to decrypt rclone.conf
