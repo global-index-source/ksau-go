@@ -55,6 +55,10 @@ func runHelp(cmd *cobra.Command, args []string) {
 			printQuotaHelp()
 		case "version":
 			printVersionHelp()
+		case "refresh":
+			printRefreshHelp()
+		case "list-remote":
+			printListRemoteHelp()
 		default:
 			fmt.Printf("Unknown command: %s\n", args[0])
 		}
@@ -131,4 +135,35 @@ Shows:
 
 Example:
   ksau-go version`)
+}
+
+func printRefreshHelp() {
+	fmt.Println(`
+Refresh Command
+---------------
+Refresh the configuration file and cache.
+
+Usage:
+  ksau-go refresh [flags]
+  
+Optional Flags:
+  -u, --url     Custom URL to fetch the configuration file (must be direct).
+
+Note:
+  The configuration file is encrypted and stored in common config path for your OS.
+  It is decrypted in memory, so there is no point trying to read it yourself.`)
+}
+
+func printListRemoteHelp() {
+	fmt.Println(`
+List Remote Command
+-------------------
+List available remotes from the configuration file.
+
+Usage:
+  ksau-go list-remote
+
+Note:
+  This command will list all available remotes from the configuration file.
+  If the command fails, run refresh.`)
 }
