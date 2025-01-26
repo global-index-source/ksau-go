@@ -10,13 +10,22 @@ Run this command to download and install ksau-go:
 curl -sSL https://raw.githubusercontent.com/global-index-source/ksau-go/master/setup.sh | bash
 ```
 
-The script will automatically detect your OS and architecture, download the appropriate binary, and offer to install it either system-wide (requires sudo) or in your user directory.
+The script will:
+1. Automatically detect your OS and architecture
+2. Download the appropriate binary from the latest release
+3. Create the configuration directory (~/.ksau/.conf/ on Unix-like systems)
+4. Offer to install either system-wide (requires sudo) or in your user directory
 
 ### Windows
 Run this command in PowerShell:
 ```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/global-index-source/ksau-go/master/install.ps1").Content
 ```
+
+## Configuration
+The tool stores its configuration in:
+- Linux/macOS: `$HOME/.ksau/.conf/rclone.conf`
+- Windows: `%AppData%\ksau\.conf\rclone.conf`
 
 ## Build Instructions
 ### To build this project, you need two important things:

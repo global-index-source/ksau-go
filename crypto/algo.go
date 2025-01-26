@@ -45,6 +45,5 @@ func Decrypt(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt data: %w", err)
 	}
-
 	return decrypted.Bytes(), nil
 }

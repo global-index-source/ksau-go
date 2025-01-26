@@ -41,10 +41,9 @@ API_URL="https://api.github.com/repos/global-index-source/ksau-go/releases/lates
 RELEASE_DATA=$(curl -s "$API_URL" || error_exit "Failed to fetch release information")
 
 # Extract download URL for the appropriate binary
-if [ "$OS" = "linux" ]; then
-    BINARY_NAME="ksau-go-linux-${ARCH}"
-elif [ "$OS" = "darwin" ]; then
-    BINARY_NAME="ksau-go-darwin-${ARCH}"
+BINARY_NAME="ksau-go-${OS}-${ARCH}"
+if [ "$OS" = "windows" ]; then
+    BINARY_NAME="${BINARY_NAME}.exe"
 fi
 
 DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep "browser_download_url.*${BINARY_NAME}" | cut -d '"' -f 4)
@@ -62,6 +61,16 @@ curl -L "$DOWNLOAD_URL" -o "${TMP_DIR}/ksau-go" || error_exit "Failed to downloa
 
 # Make binary executable
 chmod +x "${TMP_DIR}/ksau-go" || error_exit "Failed to make binary executable"
+
+# Create configuration directory
+if [ "$OS" = "linux" ] || [ "$OS" = "darwin" ]; then
+    CONFIG_DIR="$HOME/.ksau/.conf"
+else
+    CONFIG_DIR="$HOME/AppData/Roaming/ksau/.conf"
+fi
+
+mkdir -p "$CONFIG_DIR" || error_exit "Failed to create config directory: $CONFIG_DIR"
+echo "Created configuration directory: $CONFIG_DIR"
 
 # Ask for installation preference
 read -p "Do you want to install ksau-go system-wide? (requires sudo) [y/N] " -n 1 -r
@@ -98,3 +107,5 @@ else
 fi
 
 echo "Installation complete!"
+echo "Configuration directory is at: $CONFIG_DIR"
+echo "Note: You will need to place your rclone.conf file in this directory."
