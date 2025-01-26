@@ -3,13 +3,23 @@
 [![Go Version](https://img.shields.io/badge/go-1.23.4-blue)](https://golang.org/doc/go1.23)
 
 ## Installation
-For Windows, run:
+
+### Linux/macOS
+Run this command to download and install ksau-go:
+```bash
+curl -sSL https://raw.githubusercontent.com/global-index-source/ksau-go/master/setup.sh | bash
 ```
+
+The script will automatically detect your OS and architecture, download the appropriate binary, and offer to install it either system-wide (requires sudo) or in your user directory.
+
+### Windows
+Run this command in PowerShell:
+```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/global-index-source/ksau-go/master/install.ps1").Content
 ```
 
-## Build Instruction
-### To build this project, you need two important thing:
+## Build Instructions
+### To build this project, you need two important things:
 1. Private PGP key used to decrypt rclone.conf
 2. The passphrase of the PGP key
 
