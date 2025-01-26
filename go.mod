@@ -4,7 +4,6 @@ go 1.23.4
 
 require (
 	github.com/ProtonMail/gopenpgp/v3 v3.1.2
-	github.com/rclone/rclone v1.69.0
 	github.com/spf13/cobra v1.8.1
 )
 

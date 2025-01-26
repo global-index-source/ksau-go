@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -101,8 +103,33 @@ func verifyFileIntegrity(filePath string, fileID string, client *azure.AzureClie
 		return
 	}
 
-	// TODO: Implement local hash calculation once algo.go is provided
-	// Currently this functionality is unavailable as it requires the private algo.go file
-	fmt.Printf("%sFile hash verification is currently unavailable - requires algo.go implementation%s\n", ColorYellow, ColorReset)
-	fmt.Printf("Remote file hash: %s\n", fileHash)
+	// Calculate local file hash
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("%sWarning: Could not open local file for verification: %v%s\n", ColorYellow, err, ColorReset)
+		return
+	}
+	defer file.Close()
+
+	// Create new quickXorHash instance
+	hasher := crypto.New()
+
+	// Copy the file content into the hash
+	if _, err := io.Copy(hasher, file); err != nil {
+		fmt.Printf("%sWarning: Could not calculate file hash: %v%s\n", ColorYellow, err, ColorReset)
+		return
+	}
+
+	// Get the hash as a Base64-encoded string
+	hashBytes := hasher.Sum(nil)
+	localHash := base64.StdEncoding.EncodeToString(hashBytes)
+
+	// fmt.Printf("Local file hash: %s\n", localHash)
+	// fmt.Printf("Remote file hash: %s\n", fileHash)
+
+	if localHash == fileHash {
+		fmt.Printf("%sFile integrity verified successfully%s\n", ColorGreen, ColorReset)
+	} else {
+		fmt.Printf("%sWarning: File integrity check failed - hashes do not match%s\n", ColorRed, ColorReset)
+	}
 }
