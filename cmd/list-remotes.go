@@ -8,18 +8,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listRemote = &cobra.Command{
-	Use:   "list-remote",
+var listRemotes = &cobra.Command{
+	Use:   "list-remotes",
 	Short: "List available remotes from the configuration file.",
 	Long:  "List all available remotes from the configuration file. If the command fails, run refresh.",
-	Run:   runListRemote,
+	Run:   runListRemotes,
 }
 
 func init() {
-	rootCmd.AddCommand(listRemote)
+	rootCmd.AddCommand(listRemotes)
 }
 
-func runListRemote(cmd *cobra.Command, args []string) {
+func runListRemotes(cmd *cobra.Command, args []string) {
 	fmt.Println("reading configuration file...")
 
 	configData, err := getConfigData()
