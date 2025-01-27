@@ -23,5 +23,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringP("remote-config", "c", "oned", "Name of the remote configuration section in rclone.conf")
+	rootCmd.PersistentFlags().StringP("remote-config", "c", "", "Name of the remote configuration section in rclone.conf")
 }

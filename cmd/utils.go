@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/global-index-source/ksau-go/azure"
@@ -132,4 +134,67 @@ func verifyFileIntegrity(filePath string, fileID string, client *azure.AzureClie
 	} else {
 		fmt.Printf("%sWarning: File integrity check failed - hashes do not match%s\n", ColorRed, ColorReset)
 	}
+}
+
+func selectRemoteAutomatically(fileSize int64) (string, error) {
+	var selectedRemote string
+	rcloneConfigData, err := getConfigData()
+	if err != nil {
+		return "", fmt.Errorf("failed to select random remote: %w", err)
+	}
+
+	parsedRcloneConfigData, err := azure.ParseRcloneConfigData(rcloneConfigData)
+	if err != nil {
+		return "", fmt.Errorf("failed to select random remote: %w", err)
+	}
+
+	availRemotes := azure.GetAvailableRemotes(&parsedRcloneConfigData)
+
+	// if fileSize is < 1GiB, we choose a random remote
+	if fileSize/1024/1024/1024 < 1 {
+		selectedRemote = availRemotes[rand.Intn(len(availRemotes))]
+		fmt.Println("Using randomly selected remote:", selectedRemote)
+		return selectedRemote, nil
+	}
+
+	// otherwise we use the one that is free the most
+	remoteAndSpace := make(map[string]float64, len(availRemotes))
+	var wg = new(sync.WaitGroup)
+	var httpClient *http.Client = &http.Client{Timeout: 10 * time.Second}
+
+	for _, remote := range availRemotes {
+		wg.Add(1)
+		go func(r string) {
+			defer wg.Done()
+			client, err := azure.NewAzureClientFromRcloneConfigData(rcloneConfigData, r)
+			if err != nil {
+				return // ignore that remote
+			}
+
+			remoteQuota, err := client.GetDriveQuota(httpClient)
+			if err != nil {
+				return // ignore that remote
+			}
+
+			remoteAndSpace[r] = float64(remoteQuota.Remaining) // in bytes
+		}(remote)
+	}
+
+	wg.Wait()
+
+	if len(remoteAndSpace) == 0 {
+		return "", fmt.Errorf("cannot get remote with the most free space: all remote were not available")
+	}
+
+	maxSpace := 0.0
+	selectedRemote = availRemotes[0] // default to first remote
+	for remote, space := range remoteAndSpace {
+		if space > maxSpace {
+			maxSpace = space
+			selectedRemote = remote
+		}
+	}
+
+	fmt.Println("Using remote with the most free space:", selectedRemote)
+	return selectedRemote, nil
 }

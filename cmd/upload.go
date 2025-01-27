@@ -52,9 +52,6 @@ func init() {
 }
 
 func runUpload(cmd *cobra.Command, args []string) {
-	// Get the remote config from persistent flags
-	remoteConfig, _ := cmd.Flags().GetString("remote-config")
-
 	// Get file info
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -62,6 +59,16 @@ func runUpload(cmd *cobra.Command, args []string) {
 		return
 	}
 	fileSize := fileInfo.Size()
+
+	// Get the remote config from persistent flags
+	remoteConfig, _ := cmd.Flags().GetString("remote-config")
+	if remoteConfig == "" {
+		remoteConfig, err = selectRemoteAutomatically(fileSize)
+		if err != nil {
+			fmt.Println("cannot automatically determine remote to be used:", err.Error())
+			os.Exit(1)
+		}
+	}
 
 	// Dynamically select chunk size if not specified
 	if chunkSize == 0 {

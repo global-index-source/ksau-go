@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"net/http"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/global-index-source/ksau-go/azure"
 	"github.com/spf13/cobra"
