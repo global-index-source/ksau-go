@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"sync"
 
 	"github.com/global-index-source/ksau-go/azure"
 	"github.com/spf13/cobra"
@@ -37,20 +38,27 @@ func runQuota(cmd *cobra.Command, args []string) {
 
 	availRemotes := azure.GetAvailableRemotes(&rcloneConfigFile)
 
+	var wg = new(sync.WaitGroup)
+
 	for _, remoteName := range availRemotes {
-		fmt.Println("current remote:", remoteName)
-		client, err := azure.NewAzureClientFromRcloneConfigData(configData, remoteName)
-		if err != nil {
-			fmt.Printf("Failed to initialize client for remote '%s': %v\n", remoteName, err)
-			continue
-		}
+		wg.Add(1)
+		go func(rName string) {
+			client, err := azure.NewAzureClientFromRcloneConfigData(configData, rName)
+			if err != nil {
+				fmt.Printf("Failed to initialize client for remote '%s': %v\n", rName, err)
+				return
+			}
 
-		quota, err := client.GetDriveQuota(httpClient)
-		if err != nil {
-			fmt.Printf("Failed to fetch quota information for remote '%s': %v\n", remoteName, err)
-			continue
-		}
+			quota, err := client.GetDriveQuota(httpClient)
+			if err != nil {
+				fmt.Printf("Failed to fetch quota information for remote '%s': %v\n", rName, err)
+				return
+			}
 
-		azure.DisplayQuotaInfo(remoteName, quota)
+			azure.DisplayQuotaInfo(remoteName, quota)
+			wg.Done()
+		}(remoteName)
 	}
+
+	wg.Wait()
 }
