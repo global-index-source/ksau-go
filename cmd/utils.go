@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"math/rand"
+	// "math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -155,12 +155,12 @@ func selectRemoteAutomatically(fileSize int64) (string, error) {
 
 	availRemotes := azure.GetAvailableRemotes(&parsedRcloneConfigData)
 
-	// if fileSize is < 1GiB, we choose a random remote
-	if fileSize/1024/1024/1024 < 1 {
-		selectedRemote = availRemotes[rand.Intn(len(availRemotes))]
-		fmt.Println("Using randomly selected remote:", selectedRemote)
-		return selectedRemote, nil
-	}
+	// // if fileSize is < 1GiB, we choose a random remote
+	// if fileSize/1024/1024/1024 < 1 {
+	// 	selectedRemote = availRemotes[rand.Intn(len(availRemotes))]
+	// 	fmt.Println("Using randomly selected remote:", selectedRemote)
+	// 	return selectedRemote, nil
+	// }
 
 	// otherwise we use the one that is free the most
 	remoteAndSpace := make(map[string]float64, len(availRemotes))
