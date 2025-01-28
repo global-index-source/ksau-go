@@ -15,6 +15,7 @@ import (
 
 	"github.com/global-index-source/ksau-go/azure"
 	"github.com/global-index-source/ksau-go/crypto"
+	"github.com/global-index-source/ksau-go/cmd/progress"
 )
 
 // ANSI color codes for terminal output
@@ -166,6 +167,11 @@ func selectRemoteAutomatically(fileSize int64) (string, error) {
 	remoteAndSpace := make(map[string]float64, len(availRemotes))
 	var wg = new(sync.WaitGroup)
 	var httpClient *http.Client = &http.Client{Timeout: 10 * time.Second}
+	fmt.Print("Checking free spaces for each remote...")
+
+	var progressTracker *progress.ProgressTracker = progress.NewProgressTracker(int64(len(availRemotes)), progress.StyleBlocks)
+	var done int = 0
+	var mu sync.Mutex
 
 	for _, remote := range availRemotes {
 		wg.Add(1)
@@ -182,10 +188,16 @@ func selectRemoteAutomatically(fileSize int64) (string, error) {
 			}
 
 			remoteAndSpace[r] = float64(remoteQuota.Remaining) // in bytes
+
+			mu.Lock()
+			defer mu.Unlock()
+			done++
+			progressTracker.UpdateProgress(int64(done))
 		}(remote)
 	}
 
 	wg.Wait()
+	fmt.Print("\033[2K\r")
 
 	if len(remoteAndSpace) == 0 {
 		return "", fmt.Errorf("cannot get remote with the most free space: all remote were not available")
