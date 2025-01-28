@@ -385,96 +385,69 @@ func (client *AzureClient) Upload(httpClient *http.Client, params UploadParams) 
 	chunkSize := params.ChunkSize
 	numChunks := (fileSize + chunkSize - 1) / chunkSize
 
-	// Create a worker pool for parallel uploads
+	// Set up channels for upload management
 	var wg sync.WaitGroup
 	chunkChan := make(chan int64, numChunks)
 	errChan := make(chan error, numChunks)
 
-	// Start workers
-	for i := 0; i < params.ParallelChunks; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for start := range chunkChan {
-				end := start + chunkSize - 1
-				if end >= fileSize {
-					end = fileSize - 1
+	// Track total uploaded bytes with thread-safety
+	var totalUploaded int64
+	var progressMu sync.Mutex
+
+	// Use a single worker to avoid session conflicts
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for start := range chunkChan {
+			end := start + chunkSize - 1
+			if end >= fileSize {
+				end = fileSize - 1
+			}
+			actualChunkSize := end - start + 1
+
+			// Read the current chunk from the file
+			chunk := make([]byte, actualChunkSize)
+			_, err := file.ReadAt(chunk, start)
+			if err != nil && err != io.EOF {
+				errChan <- fmt.Errorf("failed to read chunk %d-%d: %v", start, end, err)
+				continue
+			}
+
+			// Retry logic for chunk upload with session refresh
+			for retry := 0; retry < params.MaxRetries; retry++ {
+				uploadSuccess, err := client.uploadChunk(httpClient, uploadURL, chunk, start, end, fileSize)
+				if uploadSuccess {
+					// Update progress
+					progressMu.Lock()
+					totalUploaded += actualChunkSize
+					if params.ProgressCallback != nil {
+						params.ProgressCallback(totalUploaded)
+					}
+					progressMu.Unlock()
+					break
 				}
 
-				// Read the current chunk from the file
-				chunk := make([]byte, end-start+1)
-				_, err := file.ReadAt(chunk, start)
-				if err != nil && err != io.EOF {
-					errChan <- fmt.Errorf("failed to read chunk %d-%d: %v", start, end, err)
-					continue
-				}
-
-				// Retry logic for chunk upload
-				for retry := 0; retry < params.MaxRetries; retry++ {
-					success, err := client.uploadChunk(httpClient, uploadURL, chunk, start, end, fileSize)
-					if success {
-						break
+				if retry < params.MaxRetries-1 {
+					if strings.Contains(err.Error(), "resourceModified") || strings.Contains(err.Error(), "invalidRange") {
+						// Session expired or range error, create new session
+						newUploadURL, sessionErr := client.createUploadSession(httpClient, params.RemoteFilePath, client.AccessToken)
+						if sessionErr != nil {
+							fmt.Printf("Failed to create new upload session: %v\n", sessionErr)
+							continue
+						}
+						uploadURL = newUploadURL
+						fmt.Println("Created new upload session after error")
 					}
 
 					fmt.Printf("Error uploading chunk %d-%d: %v\n", start, end, err)
 					fmt.Printf("Retrying chunk upload (attempt %d/%d)...\n", retry+1, params.MaxRetries)
 					time.Sleep(params.RetryDelay)
+				} else {
+					errChan <- fmt.Errorf("failed to upload chunk after %d retries: %v", params.MaxRetries, err)
 				}
 			}
-		}()
-	}
-
-	// Track total uploaded bytes
-	var totalUploaded int64
-
-	// Create mutex for progress callback
-	var progressMu sync.Mutex
-
-	// Updated worker to track progress
-	for i := 0; i < params.ParallelChunks; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for start := range chunkChan {
-				end := start + chunkSize - 1
-				if end >= fileSize {
-					end = fileSize - 1
-				}
-				chunkSize := end - start + 1
-
-				// Read and upload chunk
-				chunk := make([]byte, chunkSize)
-				_, err := file.ReadAt(chunk, start)
-				if err != nil && err != io.EOF {
-					errChan <- fmt.Errorf("failed to read chunk %d-%d: %v", start, end, err)
-					continue
-				}
-
-				// Retry logic for chunk upload
-				for retry := 0; retry < params.MaxRetries; retry++ {
-					success, err := client.uploadChunk(httpClient, uploadURL, chunk, start, end, fileSize)
-					if success {
-						// Update progress
-						progressMu.Lock()
-						totalUploaded += chunkSize
-						if params.ProgressCallback != nil {
-							params.ProgressCallback(totalUploaded)
-						}
-						progressMu.Unlock()
-						break
-					}
-
-					if retry < params.MaxRetries-1 {
-						fmt.Printf("Error uploading chunk %d-%d: %v\n", start, end, err)
-						fmt.Printf("Retrying chunk upload (attempt %d/%d)...\n", retry+1, params.MaxRetries)
-						time.Sleep(params.RetryDelay)
-					} else {
-						errChan <- fmt.Errorf("failed to upload chunk after %d retries: %v", params.MaxRetries, err)
-					}
-				}
-			}
-		}()
-	}
+		}
+	}()
 
 	// Send chunk start positions to the workers
 	for start := int64(0); start < fileSize; start += chunkSize {
@@ -621,26 +594,52 @@ func (client *AzureClient) createUploadSession(httpClient *http.Client, remotePa
 // The function sets the Content-Range header according to Azure Blob Storage requirements
 // and performs the upload using a PUT request.
 func (client *AzureClient) uploadChunk(httpClient *http.Client, uploadURL string, chunk []byte, start, end, totalSize int64) (bool, error) {
+	// Validate chunk parameters
+	if start < 0 || end < start || end >= totalSize {
+		return false, fmt.Errorf("invalid chunk range: start=%d, end=%d, total=%d", start, end, totalSize)
+	}
+
+	expectedSize := end - start + 1
+	if int64(len(chunk)) != expectedSize {
+		return false, fmt.Errorf("chunk size mismatch: got %d bytes, expected %d bytes", len(chunk), expectedSize)
+	}
+
+	// Create request with validated chunk
 	req, err := http.NewRequest("PUT", uploadURL, bytes.NewReader(chunk))
 	if err != nil {
 		return false, fmt.Errorf("failed to create chunk upload request: %v", err)
 	}
 
+	// Set required headers for chunk upload
 	rangeHeader := fmt.Sprintf("bytes %d-%d/%d", start, end, totalSize)
 	req.Header.Set("Content-Range", rangeHeader)
+	req.Header.Set("Content-Length", fmt.Sprintf("%d", expectedSize))
+	req.Header.Set("Content-Type", "application/octet-stream")
 
+	// Perform upload
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("failed to upload chunk: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusAccepted {
+	// Handle response based on status code
+	switch resp.StatusCode {
+	case http.StatusCreated, http.StatusAccepted:
 		return true, nil
+	case http.StatusRequestedRangeNotSatisfiable:
+		responseBody, _ := io.ReadAll(resp.Body)
+		return false, fmt.Errorf("invalidRange: status %d, response: %s", resp.StatusCode, responseBody)
+	case http.StatusConflict:
+		responseBody, _ := io.ReadAll(resp.Body)
+		if strings.Contains(string(responseBody), "resourceModified") {
+			return false, fmt.Errorf("resourceModified: session expired")
+		}
+		return false, fmt.Errorf("conflict error: status %d, response: %s", resp.StatusCode, responseBody)
+	default:
+		responseBody, _ := io.ReadAll(resp.Body)
+		return false, fmt.Errorf("upload failed: status %d, response: %s", resp.StatusCode, responseBody)
 	}
-
-	responseBody, _ := io.ReadAll(resp.Body)
-	return false, fmt.Errorf("failed to upload chunk, status: %d, response: %s", resp.StatusCode, responseBody)
 }
 
 // itemByPath retrieves a DriveItem from Microsoft OneDrive by its file path.
