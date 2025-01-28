@@ -69,16 +69,21 @@ func getConfigData() ([]byte, error) {
 }
 
 func getChunkSize(fileSize int64) int64 {
-	// Default chunk sizes based on file size
+	const (
+		mb5   = 5 * 1024 * 1024    // 5MB
+		mb10  = 10 * 1024 * 1024   // 10MB
+		mb100 = 100 * 1024 * 1024  // 100MB threshold
+		gb1   = 1024 * 1024 * 1024 // 1GB threshold
+	)
+
+	// Use smaller chunks for better reliability and faster retries
 	switch {
-	case fileSize < 1024*1024*64: // < 64MB
-		return 1024 * 1024 * 4 // 4MB chunks
-	case fileSize < 1024*1024*256: // < 256MB
-		return 1024 * 1024 * 8 // 8MB chunks
-	case fileSize < 1024*1024*1024: // < 1GB
-		return 1024 * 1024 * 16 // 16MB chunks
-	default:
-		return 1024 * 1024 * 32 // 32MB chunks
+	case fileSize < mb100: // < 100MB
+		return mb5 // 5MB chunks
+	case fileSize < gb1: // < 1GB
+		return mb10 // 10MB chunks
+	default: // >= 1GB
+		return mb10 // Keep 10MB chunks for consistency and reliability
 	}
 }
 

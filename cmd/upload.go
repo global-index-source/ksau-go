@@ -75,7 +75,14 @@ func runUpload(cmd *cobra.Command, args []string) {
 		chunkSize = getChunkSize(fileSize)
 		fmt.Printf("Selected chunk size: %d bytes (based on file size: %d bytes)\n", chunkSize, fileSize)
 	} else {
-		fmt.Printf("Using user-specified chunk size: %d bytes\n", chunkSize)
+		// Cap the user-specified chunk size to a reasonable maximum
+		maxChunkSize := int64(10 * 1024 * 1024) // 10MB maximum
+		if chunkSize > maxChunkSize {
+			fmt.Printf("Warning: Reducing chunk size from %d to %d bytes for reliability\n", chunkSize, maxChunkSize)
+			chunkSize = maxChunkSize
+		} else {
+			fmt.Printf("Using user-specified chunk size: %d bytes\n", chunkSize)
+		}
 	}
 
 	// Determine remote filename and path
@@ -115,7 +122,8 @@ func runUpload(cmd *cobra.Command, args []string) {
 		AccessToken:    client.AccessToken,
 	}
 
-	httpClient := &http.Client{Timeout: 10 * time.Second}
+	// Use a longer timeout for large file uploads
+	httpClient := &http.Client{Timeout: 120 * time.Second}
 	fileID, err := client.Upload(httpClient, params)
 	if err != nil {
 		fmt.Println("Failed to upload file:", err)
