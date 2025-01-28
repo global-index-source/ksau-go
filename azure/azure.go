@@ -541,7 +541,7 @@ func (client *AzureClient) createUploadSession(httpClient *http.Client, remotePa
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/me/drive/root:/%s:/createUploadSession", remotePath)
 	requestBody := map[string]interface{}{
 		"item": map[string]string{
-			"@microsoft.graph.conflictBehavior": "rename",
+			"@microsoft.graph.conflictBehavior": "replace",
 		},
 	}
 	body, _ := json.Marshal(requestBody)
@@ -625,7 +625,7 @@ func (client *AzureClient) uploadChunk(httpClient *http.Client, uploadURL string
 
 	// Handle response based on status code
 	switch resp.StatusCode {
-	case http.StatusCreated, http.StatusAccepted:
+	case http.StatusCreated, http.StatusAccepted, http.StatusOK:
 		return true, nil
 	case http.StatusRequestedRangeNotSatisfiable:
 		responseBody, _ := io.ReadAll(resp.Body)
