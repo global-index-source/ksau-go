@@ -424,6 +424,58 @@ func (client *AzureClient) Upload(httpClient *http.Client, params UploadParams) 
 		}()
 	}
 
+	// Track total uploaded bytes
+	var totalUploaded int64
+
+	// Create mutex for progress callback
+	var progressMu sync.Mutex
+
+	// Updated worker to track progress
+	for i := 0; i < params.ParallelChunks; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for start := range chunkChan {
+				end := start + chunkSize - 1
+				if end >= fileSize {
+					end = fileSize - 1
+				}
+				chunkSize := end - start + 1
+
+				// Read and upload chunk
+				chunk := make([]byte, chunkSize)
+				_, err := file.ReadAt(chunk, start)
+				if err != nil && err != io.EOF {
+					errChan <- fmt.Errorf("failed to read chunk %d-%d: %v", start, end, err)
+					continue
+				}
+
+				// Retry logic for chunk upload
+				for retry := 0; retry < params.MaxRetries; retry++ {
+					success, err := client.uploadChunk(httpClient, uploadURL, chunk, start, end, fileSize)
+					if success {
+						// Update progress
+						progressMu.Lock()
+						totalUploaded += chunkSize
+						if params.ProgressCallback != nil {
+							params.ProgressCallback(totalUploaded)
+						}
+						progressMu.Unlock()
+						break
+					}
+
+					if retry < params.MaxRetries-1 {
+						fmt.Printf("Error uploading chunk %d-%d: %v\n", start, end, err)
+						fmt.Printf("Retrying chunk upload (attempt %d/%d)...\n", retry+1, params.MaxRetries)
+						time.Sleep(params.RetryDelay)
+					} else {
+						errChan <- fmt.Errorf("failed to upload chunk after %d retries: %v", params.MaxRetries, err)
+					}
+				}
+			}
+		}()
+	}
+
 	// Send chunk start positions to the workers
 	for start := int64(0); start < fileSize; start += chunkSize {
 		chunkChan <- start
@@ -652,14 +704,19 @@ type DriveItem struct {
 //   - MaxRetries: Maximum number of retry attempts for failed uploads
 //   - RetryDelay: Duration to wait between retry attempts
 //   - AccessToken: Azure authentication token for the upload operation
+//
+// ProgressCallback is a function that gets called with progress updates
+type ProgressCallback func(uploadedBytes int64)
+
 type UploadParams struct {
-	FilePath       string
-	RemoteFilePath string
-	ChunkSize      int64
-	ParallelChunks int
-	MaxRetries     int
-	RetryDelay     time.Duration
-	AccessToken    string
+	FilePath         string
+	RemoteFilePath   string
+	ChunkSize        int64
+	ParallelChunks   int
+	MaxRetries       int
+	RetryDelay       time.Duration
+	AccessToken      string
+	ProgressCallback ProgressCallback
 }
 
 // DriveQuota represents storage quota information for a drive.

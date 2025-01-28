@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/global-index-source/ksau-go/azure"
+	"github.com/global-index-source/ksau-go/cmd/progress"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +25,8 @@ var (
 	skipHash       bool
 	hashRetries    int
 	hashRetryDelay time.Duration
+	progressStyle  string
+	customEmoji    string
 )
 
 var uploadCmd = &cobra.Command{
@@ -46,12 +50,41 @@ func init() {
 	uploadCmd.Flags().BoolVar(&skipHash, "skip-hash", false, "Skip QuickXorHash verification")
 	uploadCmd.Flags().IntVar(&hashRetries, "hash-retries", 5, "Maximum number of retries for fetching QuickXorHash")
 	uploadCmd.Flags().DurationVar(&hashRetryDelay, "hash-retry-delay", 10*time.Second, "Delay between QuickXorHash retries")
+	// Add progress style flag with detailed help
+	uploadCmd.Flags().StringVar(&progressStyle, "progress", "blocks",
+		`Progress bar style for upload visualization:
+	basic:   [=====>     ] 45% | 5.2MB/s
+	blocks:  █████░░░░░ 45% | 5.2MB/s
+	modern:  ○○●●●○○○ 45% | 5.2MB/s
+	emoji:   🟦🟦🟦⬜⬜ 45% | 5.2MB/s
+	minimal: 45% | 5.2MB/s | 42MB/100MB | ETA: 2m30s`)
+
+	// Add custom emoji flag with examples
+	uploadCmd.Flags().StringVar(&customEmoji, "emoji", "🟦",
+		`Custom emoji for emoji progress style. Examples:
+	🟦 (blue square), 🟩 (green square), 🌟 (star),
+	⭐ (yellow star), 🚀 (rocket), 📦 (package)`)
 
 	uploadCmd.MarkFlagRequired("file")
 	uploadCmd.MarkFlagRequired("remote")
 }
 
+func isValidProgressStyle(style string) bool {
+	validStyles := []string{"basic", "blocks", "modern", "emoji", "minimal"}
+	for _, valid := range validStyles {
+		if style == valid {
+			return true
+		}
+	}
+	return false
+}
+
 func runUpload(cmd *cobra.Command, args []string) {
+	// Validate progress style
+	if !isValidProgressStyle(progressStyle) {
+		fmt.Printf("Invalid progress style: %s\nValid styles are: basic, blocks, modern, emoji, minimal\n", progressStyle)
+		return
+	}
 	// Get file info
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -111,27 +144,65 @@ func runUpload(cmd *cobra.Command, args []string) {
 	fullRemotePath := filepath.Join(rootFolder, remoteFilePath)
 	fmt.Printf("Full remote path: %s\n", fullRemotePath)
 
+	// Set up progress tracking
+	var progressCallback azure.ProgressCallback
+	tracker := progress.NewProgressTracker(fileSize, progress.ProgressStyle(progressStyle))
+	if tracker == nil {
+		fmt.Println("Warning: Progress tracking not available")
+	} else {
+		tracker.CustomEmoji = customEmoji
+
+		// Create the progress callback
+		var progressMutex sync.Mutex
+		progressCallback = func(uploadedBytes int64) {
+			if tracker == nil {
+				return
+			}
+
+			progressMutex.Lock()
+			defer progressMutex.Unlock()
+
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("\nWarning: Progress update failed: %v\n", r)
+					tracker = nil // Disable progress display on error
+				}
+			}()
+
+			tracker.UpdateProgress(uploadedBytes)
+		}
+	}
+
 	// Prepare upload parameters
 	params := azure.UploadParams{
-		FilePath:       filePath,
-		RemoteFilePath: fullRemotePath,
-		ChunkSize:      chunkSize,
-		ParallelChunks: parallelChunks,
-		MaxRetries:     maxRetries,
-		RetryDelay:     retryDelay,
-		AccessToken:    client.AccessToken,
+		FilePath:         filePath,
+		RemoteFilePath:   fullRemotePath,
+		ChunkSize:        chunkSize,
+		ParallelChunks:   parallelChunks,
+		MaxRetries:       maxRetries,
+		RetryDelay:       retryDelay,
+		AccessToken:      client.AccessToken,
+		ProgressCallback: progressCallback,
 	}
 
 	// Use a longer timeout for large file uploads
 	httpClient := &http.Client{Timeout: 120 * time.Second}
 	fileID, err := client.Upload(httpClient, params)
 	if err != nil {
-		fmt.Println("Failed to upload file:", err)
+		if tracker != nil {
+			tracker.Finish()
+		}
+		fmt.Printf("\nFailed to upload file: %v\n", err)
 		return
 	}
 
 	if fileID != "" {
-		fmt.Println("File uploaded successfully.")
+		// Report 100% progress on success
+		if tracker != nil {
+			tracker.UpdateProgress(fileSize)
+			tracker.Finish()
+		}
+		fmt.Println("\nFile uploaded successfully.")
 
 		// Generate download URL
 		baseURL := client.RemoteBaseUrl
@@ -148,6 +219,10 @@ func runUpload(cmd *cobra.Command, args []string) {
 			verifyFileIntegrity(filePath, fileID, client, httpClient)
 		}
 	} else {
-		fmt.Println("File upload failed.")
+		// Clear progress bar on failure
+		if tracker != nil {
+			tracker.Finish()
+		}
+		fmt.Println("\nFile upload failed.")
 	}
 }
