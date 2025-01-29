@@ -51,7 +51,7 @@ func init() {
 	uploadCmd.Flags().IntVar(&hashRetries, "hash-retries", 5, "Maximum number of retries for fetching QuickXorHash")
 	uploadCmd.Flags().DurationVar(&hashRetryDelay, "hash-retry-delay", 10*time.Second, "Delay between QuickXorHash retries")
 	// Add progress style flag with detailed help
-	uploadCmd.Flags().StringVar(&progressStyle, "progress", "blocks",
+	uploadCmd.Flags().StringVar(&progressStyle, "progress", "modern",
 		`Progress bar style for upload visualization:
 	basic:   [=====>     ] 45% | 5.2MB/s
 	blocks:  █████░░░░░ 45% | 5.2MB/s
@@ -96,7 +96,7 @@ func runUpload(cmd *cobra.Command, args []string) {
 	// Get the remote config from persistent flags
 	remoteConfig, _ := cmd.Flags().GetString("remote-config")
 	if remoteConfig == "" {
-		remoteConfig, err = selectRemoteAutomatically(fileSize)
+		remoteConfig, err = selectRemoteAutomatically(fileSize, progressStyle)
 		if err != nil {
 			fmt.Println("cannot automatically determine remote to be used:", err.Error())
 			os.Exit(1)

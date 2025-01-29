@@ -142,7 +142,7 @@ func verifyFileIntegrity(filePath string, fileID string, client *azure.AzureClie
 	}
 }
 
-func selectRemoteAutomatically(fileSize int64) (string, error) {
+func selectRemoteAutomatically(fileSize int64, progressStyle string) (string, error) {
 	var selectedRemote string
 	rcloneConfigData, err := getConfigData()
 	if err != nil {
@@ -169,7 +169,7 @@ func selectRemoteAutomatically(fileSize int64) (string, error) {
 	var httpClient *http.Client = &http.Client{Timeout: 10 * time.Second}
 	fmt.Print("Checking free spaces for each remote...")
 
-	var progressTracker *progress.ProgressTracker = progress.NewProgressTracker(int64(len(availRemotes)), progress.StyleBlocks)
+	var progressTracker *progress.ProgressTracker = progress.NewProgressTracker(int64(len(availRemotes)), progress.ProgressStyle(progressStyle))
 	var done int = 0
 	var mu sync.Mutex
 
