@@ -19,7 +19,6 @@ var (
 	remoteFolder   string
 	remoteFileName string
 	chunkSize      int64
-	parallelChunks int
 	maxRetries     int
 	retryDelay     time.Duration
 	skipHash       bool
@@ -44,7 +43,6 @@ func init() {
 	uploadCmd.Flags().StringVarP(&remoteFolder, "remote", "r", "", "Remote folder on OneDrive to upload the file (required)")
 	uploadCmd.Flags().StringVarP(&remoteFileName, "remote-name", "n", "", "Optional: Remote filename (defaults to local filename)")
 	uploadCmd.Flags().Int64VarP(&chunkSize, "chunk-size", "s", 0, "Chunk size for uploads in bytes (0 for automatic selection)")
-	uploadCmd.Flags().IntVarP(&parallelChunks, "parallel", "p", 1, "Number of parallel chunks to upload")
 	uploadCmd.Flags().IntVar(&maxRetries, "retries", 3, "Maximum number of retries for uploading chunks")
 	uploadCmd.Flags().DurationVar(&retryDelay, "retry-delay", 5*time.Second, "Delay between retries")
 	uploadCmd.Flags().BoolVar(&skipHash, "skip-hash", false, "Skip QuickXorHash verification")
@@ -178,7 +176,6 @@ func runUpload(cmd *cobra.Command, args []string) {
 		FilePath:         filePath,
 		RemoteFilePath:   fullRemotePath,
 		ChunkSize:        chunkSize,
-		ParallelChunks:   parallelChunks,
 		MaxRetries:       maxRetries,
 		RetryDelay:       retryDelay,
 		AccessToken:      client.AccessToken,

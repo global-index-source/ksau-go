@@ -38,7 +38,6 @@
 //	    FilePath: "local/path/file.txt",
 //	    RemoteFilePath: "remote/path/file.txt",
 //	    ChunkSize: 10 * 1024 * 1024, // 10MB chunks
-//	    ParallelChunks: 4,
 //	    MaxRetries: 3,
 //	    RetryDelay: time.Second * 5,
 //	}
@@ -66,7 +65,6 @@ import (
 //
 // Parameters:
 //   - httpClient: The HTTP client to use for requests
-//   - params: UploadParams struct containing:
 //   - FilePath: Local path of file to upload
 //   - RemoteFilePath: Destination path in Azure storage
 //   - ChunkSize: Size of each upload chunk in bytes
