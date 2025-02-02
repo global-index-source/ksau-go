@@ -24,7 +24,7 @@ if (-not $asset) {
 
 # Download the asset
 $downloadUrl = $asset.browser_download_url
-$outputFile = "$programFolder\$assetName"
+$outputFile = "$programFolder\ksau-go"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFile
 
 # Add the program folder to the user's PATH environment variable
