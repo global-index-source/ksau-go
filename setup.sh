@@ -73,7 +73,8 @@ mkdir -p "$CONFIG_DIR" || error_exit "Failed to create config directory: $CONFIG
 echo "Created configuration directory: $CONFIG_DIR"
 
 # Ask for installation preference
-read -p "Do you want to install ksau-go system-wide? (requires sudo) [y/N] " -n 1 -r
+read -r -p "Do you want to install ksau-go system-wide? (requires sudo) [y/N] " response
+response=${response,,}  # tolower
 echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
