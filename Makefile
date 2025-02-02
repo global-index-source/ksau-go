@@ -1,6 +1,6 @@
 # Variables
 APP_NAME := ksau-go
-VERSION ?= 0.3.0-alpha
+VERSION ?= 1.0.0-beta
 COMMIT := $(shell git rev-parse --short HEAD)
 WINDOWS_SHENANIGANS :=
 
