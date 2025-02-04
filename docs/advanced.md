@@ -14,19 +14,9 @@ ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder --chun
 ```
 
 ### Increasing Timeout
-For large file uploads, increase the timeout setting:
+For large file uploads with large chunk size, increase the timeout setting:
 ```bash
 ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder --timeout 60s
-```
-
-## Security Best Practices
-### Encrypting Configuration Files
-Ensure your configuration files are encrypted and stored securely. Use tools like GPG to encrypt sensitive files.
-
-### Using Environment Variables
-Store sensitive information in environment variables instead of configuration files. For example:
-```bash
-export KSAU_GO_API_KEY=your_api_key
 ```
 
 ## Integration with Other Tools
@@ -35,7 +25,6 @@ Automate uploads using cron jobs:
 ```bash
 (crontab -l ; echo "0 2 * * * ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder") | crontab -
 ```
-
 
 ## Additional Tips
 - Regularly update the tool to get the latest features and bug fixes.
