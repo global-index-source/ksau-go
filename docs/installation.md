@@ -1,9 +1,5 @@
 # Installation Guide
 
-## System Requirements
-- Operating System: Linux, macOS, Windows
-- Go version 1.23.4 or higher
-
 ## Recommended Method
 Run this command to download and install ksau-go:
 ```bash
