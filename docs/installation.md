@@ -1,12 +1,5 @@
 # Installation Guide
 
-## Recommended Method
-Run this command to download and install ksau-go:
-```bash
-curl -sSL https://raw.githubusercontent.com/global-index-source/ksau-go/master/setup.sh | bash
-```
-This method automatically detects your OS and architecture, downloads the appropriate binary, and sets up the configuration directory. Note: This method currently works for Linux/macOS only.
-
 ## Linux/macOS
 Run this command to download and install ksau-go:
 ```bash
