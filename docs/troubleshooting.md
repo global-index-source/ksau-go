@@ -67,15 +67,6 @@ ksau-go quota
 ksau-go list-remotes
 ```
 
-### Upload with Increased Timeout
-```bash
-ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder --timeout 60s
-```
-
-### Upload with Custom Chunk Size
-```bash
-ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder --chunk-size 10485760
-```
 
 ## Additional Tips
 - Regularly update the tool to get the latest features and bug fixes.

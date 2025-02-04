@@ -14,11 +14,10 @@ ksau-go refresh
 ## Shell Completion
 To enable command-line completion for your shell, run:
 ```bash
-ksau-go completion [shell] >> ~/.bashrc && source ~/.bashrc  # For bash
-ksau-go completion [shell] >> ~/.zshrc && source ~/.zshrc    # For zsh
-ksau-go completion [shell] >> $PROFILE                       # For PowerShell
+ksau-go completion bash >> ~/.bashrc && source ~/.bashrc  # For bash
+ksau-go completion zsh >> ~/.zshrc && source ~/.zshrc    # For zsh
+ksau-go completion powershell >> $PROFILE               # For PowerShell
 ```
-Replace `[shell]` with your shell type (e.g., bash, zsh, powershell).
 
 ## Renaming the Tool
 To rename the tool from `ksau-go` to `ksau`, you can create an alias in your shell configuration file:
@@ -39,13 +38,6 @@ export KSAU_GO_ENV_VAR=value
 ```
 Replace `KSAU_GO_ENV_VAR` with the actual environment variable name and `value` with the desired value.
 
-## Setting Up Aliases
-You can set up additional aliases for frequently used commands. For example:
-```bash
-alias ksau-upload='ksau-go upload'
-alias ksau-refresh='ksau-go refresh'
-```
-Add these lines to your shell configuration file and reload the configuration.
 
 ## Additional Tips
 - Ensure your configuration file is properly formatted and contains all necessary settings.

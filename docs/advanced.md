@@ -1,9 +1,10 @@
 # Advanced Features
 
-## Custom Configurations
+## Custom Configurations (With your own remote)
 You can customize the tool's behavior by modifying the configuration file located at:
 - Linux/macOS: `$HOME/.ksau/.conf/rclone.conf`
 - Windows: `%AppData%\ksau\.conf\rclone.conf`
+> NOTE: You must encrypt it with pgp private key and passphrase and upadte it in crypto/
 
 ## Performance Optimization
 ### Adjusting Chunk Size
@@ -35,31 +36,6 @@ Automate uploads using cron jobs:
 (crontab -l ; echo "0 2 * * * ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder") | crontab -
 ```
 
-### Using with CI/CD Pipelines
-Integrate ksau-go with your CI/CD pipelines to automate deployments and backups. Add the following to your CI/CD configuration:
-```yaml
-steps:
-  - name: Upload to OneDrive
-    run: ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder
-```
-
-## Command Aliases and Shortcuts
-### Creating Aliases
-Create aliases for frequently used commands to save time:
-```bash
-alias ksau-upload='ksau-go upload'
-alias ksau-refresh='ksau-go refresh'
-```
-Add these lines to your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `$PROFILE` for PowerShell) and reload the configuration.
-
-### Using Shell Functions
-Create shell functions for complex command sequences:
-```bash
-ksau_backup() {
-  ksau-go upload --file /path/to/local/directory --remote /path/to/remote/backup --recursive
-}
-```
-Add this function to your shell configuration file and reload the configuration.
 
 ## Additional Tips
 - Regularly update the tool to get the latest features and bug fixes.
