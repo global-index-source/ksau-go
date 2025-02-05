@@ -42,6 +42,9 @@
   ksau-go upload --file /path/to/local/file --remote /path/to/remote/folder --chunk-size 10485760
   ```
 
+  > Note: It's best if chunk size is multiple of 320KiB as that is what Microsoft's docs told us to use. However it does
+  > not cause the API to error out. That said, we still highly recommend using a value that is a multiple of 320KiB.
+
 ## Updating/Refreshing Configurations
 
 ### How to update configurations

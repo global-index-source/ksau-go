@@ -1,10 +1,12 @@
 # Advanced Features
 
 ## Custom Configurations (With your own remote)
-You can customize the tool's behavior by modifying the configuration file located at:
+In the future, you can customize the tool's behavior by modifying the configuration file located at:
 - Linux/macOS: `$HOME/.ksau/.conf/rclone.conf`
 - Windows: `%AppData%\ksau\.conf\rclone.conf`
-> NOTE: You must encrypt it with pgp private key and passphrase and upadte it in crypto/
+
+However, currently the tool has no way of knowing if the file is not encrypted, therefore the decryption
+process will fail and cause the program to panic.
 
 ## Performance Optimization
 ### Adjusting Chunk Size

@@ -16,7 +16,8 @@ Run this command in PowerShell:
 ```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/global-index-source/ksau-go/master/install.ps1").Content
 ```
-Note: You might encounter security-related messages because the executable is not signed. The script installs the tool as `ksau-go` instead of `ksau-go-windows-amd64.exe`.
+> Note: You might encounter security-related messages because the executable is not signed.
+> The script installs the tool as `ksau-go.exe` instead of `ksau-go-windows-amd64.exe`.
 
 
 ## Verification
