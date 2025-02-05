@@ -71,10 +71,11 @@ func getConfigData() ([]byte, error) {
 
 func getChunkSize(fileSize int64) int64 {
 	const (
-		mb5   = 5 * 1024 * 1024    // 5MB
-		mb10  = 10 * 1024 * 1024   // 10MB
-		mb100 = 100 * 1024 * 1024  // 100MB threshold
-		gb1   = 1024 * 1024 * 1024 // 1GB threshold
+		mb5   = 16 * 320 * azure.KibiByte // 5MB
+		mb10  = 32 * 320 * azure.KibiByte // 10MB
+		mb25  = 80 * 320 * azure.KibiByte // 25MB
+		mb100 = 100 * 1024 * 1024         // 100MB threshold
+		gb1   = 1024 * 1024 * 1024        // 1GB threshold
 	)
 
 	// Use smaller chunks for better reliability and faster retries
@@ -84,7 +85,7 @@ func getChunkSize(fileSize int64) int64 {
 	case fileSize < gb1: // < 1GB
 		return mb10 // 10MB chunks
 	default: // >= 1GB
-		return mb10 // Keep 10MB chunks for consistency and reliability
+		return mb25 // 25MB chunks
 	}
 }
 

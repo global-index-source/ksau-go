@@ -106,11 +106,13 @@ func runUpload(cmd *cobra.Command, args []string) {
 		chunkSize = getChunkSize(fileSize)
 		fmt.Printf("Selected chunk size: %d bytes (based on file size: %d bytes)\n", chunkSize, fileSize)
 	} else {
-		// Cap the user-specified chunk size to a reasonable maximum
-		maxChunkSize := int64(10 * 1024 * 1024) // 10MB maximum
+		// according to MS docs, limit is 60MiB, but just to be on the safe side, we limit to 50 MiB here
+		maxChunkSize := int64(160 * 320 * azure.KibiByte)
 		if chunkSize > maxChunkSize {
 			fmt.Printf("Warning: Reducing chunk size from %d to %d bytes for reliability\n", chunkSize, maxChunkSize)
 			chunkSize = maxChunkSize
+		} else if chunkSize%(320*azure.KibiByte) != 0 {
+			fmt.Printf("Warning: Chunk size %d is not multiple of 320KiB, upload may not be optimal\n", chunkSize)
 		} else {
 			fmt.Printf("Using user-specified chunk size: %d bytes\n", chunkSize)
 		}
