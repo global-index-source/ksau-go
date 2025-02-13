@@ -3,5 +3,6 @@
     "minor": 0,
     "patch": 0,
     "update_type": "stable",
-    "update_string": "1.0.0-beta"
+    "update_string": "1.0.0-beta",
+    "update_url": "https://github.com/global-index-source/ksau-go/releases/download/1.0.0-beta/"
 }

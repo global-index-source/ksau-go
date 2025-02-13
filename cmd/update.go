@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,36 +42,39 @@ func init() {
 	updateCmd.Flags().StringVarP(&updateCustomUrl, "url", "u", "", "Sets a custom update metadata url (must be direct.)")
 }
 
+func download(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("download failed for url '%s': %v", url, err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	return body, nil
+}
+
 func runUpdate(cmd *cobra.Command, args []string) {
 	var targetUrl string
+	var updateMetadata *UpdateMetadata = new(UpdateMetadata)
+
 	if updateCustomUrl != "" {
 		targetUrl = updateCustomUrl
 	} else {
 		targetUrl = DEFAULT_URL
 	}
 
-	fmt.Println("fetching rclone config from", targetUrl)
-	resp, err := http.Get(targetUrl)
+	body, err := download(targetUrl)
 	if err != nil {
-		fmt.Println("failed to fetch config file:", err.Error())
+		fmt.Printf("%v\n", err)
+	}
+
+	err = json.Unmarshal(body, updateMetadata)
+	if err != nil {
+		fmt.Printf("failed to unmarshal update metadata: %v", err)
 		os.Exit(1)
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("something is wrong with the response:", err.Error())
-		os.Exit(1)
-	}
-
-	userConfigFilePath, err := getConfigPath()
-	if err != nil {
-		fmt.Println("cannot get your rclone config file path:", err.Error())
-	}
-
-	fmt.Println("writing config file to", userConfigFilePath)
-	err = os.WriteFile(userConfigFilePath, body, 0644)
-	if err != nil {
-		fmt.Println("cannot write to your config file:", err.Error())
 	}
 }
