@@ -28,12 +28,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-mod-
 
+      - name: Get Version from Makefile
+        id: get_version
+        run: |
+          VERSION=$(make -s version | grep 'Version:' | awk '{print $2}')
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
       - name: Build for GitHub Actions
         env:
           PRIVATE_GPG_KEY_GIST_URL: ${{ secrets.PRIVATE_GPG_KEY_GIST_URL }}
           PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
+          VERSION: ${{ env.VERSION }}
         run: |
-          set -e  # Exit immediately if any command fails
+          set -e
           if [ -z "$PRIVATE_GPG_KEY_GIST_URL" ]; then
             echo "Error: PRIVATE_GPG_KEY_GIST_URL is empty or not set."
             exit 1
@@ -48,18 +55,34 @@ jobs:
             exit 1
           fi
           echo "$PRIVATE_PGP_KEY_PASSPHRASE" > crypto/passphrase.txt
-
           tr -d '\n' < crypto/passphrase.txt > tmp
           mv tmp crypto/passphrase.txt
 
-          make build_gh_actions
+          # Build all specified OS/Arch combinations
+          for os_arch in \
+              "linux/amd64" \
+              "linux/arm" \
+              "linux/arm64" \
+              "windows/amd64" \
+              "windows/arm64" \
+              "darwin/amd64" \
+              "darwin/arm64" \
+              "freebsd/amd64" \
+              "freebsd/arm64" \
+              "openbsd/amd64" \
+              "openbsd/arm64"
+          do
+              os=$(echo "$os_arch" | cut -d'/' -f1)
+              arch=$(echo "$os_arch" | cut -d'/' -f2)
+              output="ksau-go-${os}-${arch}"
+              if [ "$os" = "windows" ]; then
+                  output="${output}.exe"
+              fi
+              echo "Building $output with version $VERSION..."
+              GOOS="$os" GOARCH="$arch" go build -ldflags "-X main.Version=$VERSION" -o "$output"
+          done
+
           rm -f crypto/privkey.pem crypto/passphrase.txt
-          
-      - name: Get Version from Makefile
-        id: get_version
-        run: |
-          VERSION=$(make -s version | grep 'Version:' | awk '{print $2}')
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Create or Update Git Tag
         id: create_tag
@@ -85,6 +108,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Upload steps for each OS/Arch combination
       - name: Upload Linux AMD64 Release Asset
         uses: actions/upload-release-asset@v1
         with:
@@ -95,12 +119,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Windows AMD64 Release Asset
+      - name: Upload Linux ARM Release Asset
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-go-windows-amd64.exe
-          asset_name: ksau-go-windows-amd64.exe
+          asset_path: ./ksau-go-linux-arm
+          asset_name: ksau-go-linux-arm
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,12 +139,82 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Android ARM64 Release Asset
+      - name: Upload Windows AMD64 Release Asset
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-go-android-arm64
-          asset_name: ksau-go-android-arm64
+          asset_path: ./ksau-go-windows-amd64.exe
+          asset_name: ksau-go-windows-amd64.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-windows-arm64.exe
+          asset_name: ksau-go-windows-arm64.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Darwin AMD64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-darwin-amd64
+          asset_name: ksau-go-darwin-amd64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Darwin ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-darwin-arm64
+          asset_name: ksau-go-darwin-arm64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload FreeBSD AMD64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-freebsd-amd64
+          asset_name: ksau-go-freebsd-amd64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload FreeBSD ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-freebsd-arm64
+          asset_name: ksau-go-freebsd-arm64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload OpenBSD AMD64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-openbsd-amd64
+          asset_name: ksau-go-openbsd-amd64
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload OpenBSD ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ksau-go-openbsd-arm64
+          asset_name: ksau-go-openbsd-arm64
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
