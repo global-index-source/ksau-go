@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+
 	// "math/rand"
 	"net/http"
 	"os"
@@ -33,7 +34,7 @@ func getConfigPath() (string, error) {
 	}
 
 	var configDir string
-	if slices.Contains([]string{"android", "linux", "unix"}, runtime.GOOS) {
+	if slices.Contains([]string{"android", "linux", "unix", "freebsd", "openbsd", "darwin"}, runtime.GOOS) {
 		configDir = filepath.Join(home, ".ksau", ".conf")
 	} else if runtime.GOOS == "windows" {
 		configDir = filepath.Join(home, "AppData", "Roaming", "ksau", ".conf")
