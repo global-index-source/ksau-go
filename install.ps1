@@ -24,7 +24,7 @@ if (-not $asset) {
 
 # Download the asset
 $downloadUrl = $asset.browser_download_url
-$outputFile = "$programFolder\ksau-go"
+$outputFile = "$programFolder\ksau-go.exe"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFile
 
 # Add the program folder to the user's PATH environment variable
@@ -37,4 +37,5 @@ if (-not $userPath.Contains($programFolder)) {
     Write-Host "'$programFolder' is already in the user's PATH environment variable."
 }
 
-Write-Host "Download and setup completed successfully."
+Write-Host "Download and installation completed successfully."
+Write-Host "Open New terminal, verify installation and initiate tool by executing: ksau-go.exe refresh"
