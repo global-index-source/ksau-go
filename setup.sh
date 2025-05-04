@@ -73,11 +73,10 @@ mkdir -p "$CONFIG_DIR" || error_exit "Failed to create config directory: $CONFIG
 echo "Created configuration directory: $CONFIG_DIR"
 
 # Ask for installation preference
-read -r -p "Do you want to install ksau-go system-wide? (requires sudo) [y/N] " response
-response=${response,,}  # tolower
-echo
+read -r -p "Do you want to install ksau-go system-wide? (requires sudo) [y/N] " response </dev/tty
+response="${response,,}"  # Convert to lowercase
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [[ "$response" =~ ^[y]$ ]]; then
     # System-wide installation
     if ! command_exists sudo; then
         error_exit "sudo is required for system-wide installation but not installed"
