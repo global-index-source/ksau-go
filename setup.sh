@@ -37,7 +37,7 @@ echo "Detected system: $OS-$ARCH"
 
 # Get latest release URL
 echo "Fetching latest release information..."
-API_URL="https://api.github.com/repos/global-index-source/ksau-go/releases/latest"
+API_URL="https://api.github.com/repos/global-index-source/ksau-go/releases/latest  "
 RELEASE_DATA=$(curl -s "$API_URL" || error_exit "Failed to fetch release information")
 
 # Extract download URL for the appropriate binary
@@ -93,14 +93,29 @@ else
     # Add to PATH if not already present
     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
         echo "Adding $HOME/.local/bin to PATH in shell configuration..."
-        if [ -f "$HOME/.bashrc" ]; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        
+        # Check for fish shell first
+        if [ -f "$HOME/.config/fish/config.fish" ]; then
+            # Check if the PATH is already added to avoid duplicates
+            if ! grep -q 'set -gx PATH "$HOME/.local/bin" $PATH' "$HOME/.config/fish/config.fish"; then
+                echo 'set -gx PATH "$HOME/.local/bin" $PATH' >> "$HOME/.config/fish/config.fish"
+                echo "Added PATH to fish shell config ($HOME/.config/fish/config.fish)"
+            fi
+            echo "Please run 'source ~/.config/fish/config.fish' or restart your terminal to update your current shell"
+        elif [ -f "$HOME/.bashrc" ]; then
+            # Check if the PATH is already added to avoid duplicates
+            if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc"; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+            fi
             echo "Please run 'source ~/.bashrc' to update your current shell"
         elif [ -f "$HOME/.zshrc" ]; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+            # Check if the PATH is already added to avoid duplicates
+            if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.zshrc"; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+            fi
             echo "Please run 'source ~/.zshrc' to update your current shell"
         else
-            echo "Warning: Could not find .bashrc or .zshrc to update PATH"
+            echo "Warning: Could not find .bashrc, .zshrc, or fish config to update PATH"
             echo "Please manually add $HOME/.local/bin to your PATH"
         fi
     fi
