@@ -37,7 +37,7 @@ echo "Detected system: $OS-$ARCH"
 
 # Get latest release URL
 echo "Fetching latest release information..."
-API_URL="https://api.github.com/repos/global-index-source/ksau-go/releases/latest  "
+API_URL="https://api.github.com/repos/global-index-source/ksau-go/releases/latest"
 RELEASE_DATA=$(curl -s "$API_URL" || error_exit "Failed to fetch release information")
 
 # Extract download URL for the appropriate binary
