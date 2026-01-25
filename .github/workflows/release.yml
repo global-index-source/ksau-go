@@ -3,7 +3,7 @@ name: Build, Tag, and Release Application
 on:
   push:
     tags:
-      - 'v*.*.*-*'
+      - "v*.*.*-*"
 
 jobs:
   build_and_release:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.23.4'
+          go-version: "1.23.4"
 
       - name: Cache Go Modules
         uses: actions/cache@v3
@@ -33,12 +33,16 @@ jobs:
         run: |
           VERSION=$(make -s version | grep 'Version:' | awk '{print $2}')
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
 
       - name: Build for GitHub Actions
         env:
           PRIVATE_GPG_KEY_GIST_URL: ${{ secrets.PRIVATE_GPG_KEY_GIST_URL }}
           PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
           VERSION: ${{ env.VERSION }}
+          COMMIT: ${{ env.COMMIT }}
+          DATE: ${{ env.DATE }}
         run: |
           set -e
           if [ -z "$PRIVATE_GPG_KEY_GIST_URL" ]; then
@@ -79,7 +83,7 @@ jobs:
                   output="${output}.exe"
               fi
               echo "Building $output with version $VERSION..."
-              GOOS="$os" GOARCH="$arch" go build -ldflags "-X main.Version=$VERSION" -o "$output"
+              GOOS="$os" GOARCH="$arch" go build -ldflags "-X 'github.com/global-index-source/ksau-go/cmd.Version=$VERSION' -X 'github.com/global-index-source/ksau-go/cmd.Commit=$COMMIT' -X 'github.com/global-index-source/ksau-go/cmd.Date=$DATE'" -o "$output"
           done
 
           rm -f crypto/privkey.pem crypto/passphrase.txt
