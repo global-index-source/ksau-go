@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/global-index-source/ksau-go/pkg/update"
 	"github.com/spf13/cobra"
 )
 
@@ -78,5 +79,11 @@ func runRollback(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Restored to backup: %s\n", backupName)
 	
 	// Restart with the rolled back binary
-	return restartWithNewBinary(currentExe)
+	config := &update.Config{
+		RepoOwner:      "TronPkr",
+		RepoName:       "ksau-go",
+		CurrentVersion: Version,
+	}
+	updater := update.NewUpdater(config)
+	return updater.RestartWithNewBinary(currentExe)
 }

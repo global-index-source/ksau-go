@@ -198,7 +198,7 @@ func (u *Updater) PerformUpdate(release *GitHubRelease) error {
 	fmt.Printf("Updated to version %s\n", release.TagName)
 
 	// Restart with new binary
-	return u.restartWithNewBinary(currentExe)
+	return u.RestartWithNewBinary(currentExe)
 }
 
 // getAssetName returns the appropriate asset name for the current platform
@@ -361,8 +361,8 @@ func (u *Updater) atomicUpdate(newPath, currentPath, backupPath string) error {
 	return nil
 }
 
-// restartWithNewBinary restarts the application with the new binary
-func (u *Updater) restartWithNewBinary(exePath string) error {
+// RestartWithNewBinary restarts the application with the new binary
+func (u *Updater) RestartWithNewBinary(exePath string) error {
 	fmt.Println("Restarting with new version...")
 
 	// Get current arguments
