@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/global-index-source/ksau-go/azure"
@@ -35,6 +37,8 @@ func runQuota(cmd *cobra.Command, args []string) {
 	}
 
 	httpClient := &http.Client{Timeout: 10 * time.Second}
+	exitCode := atomic.Int32{}
+	exitCode.Store(0)
 
 	availRemotes := azure.GetAvailableRemotes(&rcloneConfigFile)
 
@@ -46,12 +50,16 @@ func runQuota(cmd *cobra.Command, args []string) {
 			client, err := azure.NewAzureClientFromRcloneConfigData(configData, rName)
 			if err != nil {
 				fmt.Printf("Failed to initialize client for remote '%s': %v\n", rName, err)
+				exitCode.Store(1)
+				wg.Done()
 				return
 			}
 
 			quota, err := client.GetDriveQuota(httpClient)
 			if err != nil {
 				fmt.Printf("Failed to fetch quota information for remote '%s': %v\n", rName, err)
+				exitCode.Store(1)
+				wg.Done()
 				return
 			}
 
@@ -61,4 +69,5 @@ func runQuota(cmd *cobra.Command, args []string) {
 	}
 
 	wg.Wait()
+	os.Exit(int(exitCode.Load()))
 }
