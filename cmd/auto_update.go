@@ -64,7 +64,7 @@ func (auc *AutoUpdateChecker) CheckForUpdatesInBackground(currentVersion string)
 
 		if release != nil && !isLatestVersion(currentVersion, release.TagName) {
 			fmt.Printf("\n🚀 Update available! %s → %s\n", currentVersion, release.TagName)
-			fmt.Printf("Run 'ksau-go self-update' to upgrade.\n")
+			fmt.Printf("Run 'ksau-go update' to upgrade.\n")
 			
 			if len(release.Body) > 100 {
 				fmt.Printf("Release notes: %s...\n", strings.TrimSpace(release.Body[:100]))
@@ -111,7 +111,7 @@ func (auc *AutoUpdateChecker) SchedulePeriodicChecks(currentVersion string) {
 					}
 				} else {
 					fmt.Printf("🚀 Update available! %s → %s\n", currentVersion, release.TagName)
-					fmt.Printf("Run 'ksau-go self-update' to upgrade.\n")
+					fmt.Printf("Run 'ksau-go update' to upgrade.\n")
 				}
 			}
 

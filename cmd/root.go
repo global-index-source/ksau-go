@@ -21,7 +21,7 @@ OneDrive configurations.`,
 
 func Execute() {
 	// Initialize auto-update checker if not a restart command
-	if !contains(os.Args, "self-update") && !restarted {
+	if !contains(os.Args, "update") && !restarted {
 		checker := NewAutoUpdateChecker()
 		checker.CheckForUpdatesInBackground(Version)
 		

@@ -48,7 +48,7 @@ type UpdateConfig struct {
 }
 
 var updateCmd = &cobra.Command{
-	Use:   "self-update",
+	Use:   "update",
 	Short: "Update ksau-go to the latest version",
 	Long: `Check for updates and automatically upgrade ksau-go to the latest version.
 This command downloads the latest release from GitHub, verifies its integrity,
@@ -638,7 +638,7 @@ func runCheckUpdates(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Println("⚠️  A new version is available!")
 		fmt.Printf("Release notes: %s\n\n", latestRelease.Body)
-		fmt.Println("Run 'ksau-go self-update' to install the new version.")
+		fmt.Println("Run 'ksau-go update' to install the new version.")
 	}
 
 	// Update last check time
@@ -765,7 +765,7 @@ func (auc *AutoUpdateChecker) CheckForUpdatesInBackground(currentVersion string)
 		if latestRelease != nil && !isLatestVersion(currentVersion, latestRelease.TagName) {
 			fmt.Printf("\n⚠️  A new version of ksau-go is available: %s\n", latestRelease.TagName)
 			fmt.Printf("Current version: %s\n", currentVersion)
-			fmt.Println("Run 'ksau-go self-update' to update.")
+			fmt.Println("Run 'ksau-go update' to update.")
 			if latestRelease.Body != "" {
 				fmt.Printf("Release notes:\n%s\n", latestRelease.Body)
 			}
