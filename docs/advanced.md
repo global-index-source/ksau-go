@@ -5,8 +5,8 @@ In the future, you can customize the tool's behavior by modifying the configurat
 - Linux/macOS: `$HOME/.ksau/.conf/rclone.conf`
 - Windows: `%AppData%\ksau\.conf\rclone.conf`
 
-However, currently the tool has no way of knowing if the file is not encrypted, therefore the decryption
-process will fail and cause the program to panic.
+However, if the file is not encrypted, the tool will now detect that and load it safely. If the
+file is encrypted but the key material is missing, the tool will return a descriptive error.
 
 ## Performance Optimization
 ### Adjusting Chunk Size

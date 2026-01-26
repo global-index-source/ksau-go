@@ -22,7 +22,7 @@ func init() {
 func runListRemotes(cmd *cobra.Command, args []string) {
 	fmt.Println("reading configuration file...")
 
-	configData, err := getConfigData()
+	configData, _, err := getConfigData()
 	if err != nil {
 		fmt.Println("failed to get configuration file data:", err.Error())
 		os.Exit(1)

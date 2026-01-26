@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	configFormat string
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "ksau-go",
 	Short: "A CLI tool for OneDrive file operations",
@@ -24,4 +28,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringP("remote-config", "c", "", "Name of the remote configuration section in rclone.conf")
+	rootCmd.PersistentFlags().StringVar(&configFormat, "config-format", "auto", "Config file format for write operations: encrypted, plaintext, auto")
 }

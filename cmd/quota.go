@@ -25,7 +25,7 @@ func init() {
 
 func runQuota(cmd *cobra.Command, args []string) {
 	// Read the rclone config file
-	configData, err := getConfigData()
+	configData, _, err := getConfigData()
 	if err != nil {
 		fmt.Println("Failed to read config file:", err.Error())
 		return

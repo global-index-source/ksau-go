@@ -2,23 +2,31 @@ package crypto
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ProtonMail/gopenpgp/v3/crypto"
 )
 
 var pgp *crypto.PGPHandle = crypto.PGP()
 
-func getPrivateKey() *crypto.Key {
+func getPrivateKey() (*crypto.Key, error) {
+	if strings.TrimSpace(privkey) == "" || strings.TrimSpace(passphrase) == "" {
+		return nil, fmt.Errorf("missing private key material")
+	}
 	key, err := crypto.NewPrivateKeyFromArmored(privkey, []byte(passphrase))
 	if err != nil {
-		panic("Failed to create private key")
+		return nil, fmt.Errorf("failed to create private key: %w", err)
 	}
 
-	return key
+	return key, nil
 }
 
 func Encrypt(text string) ([]byte, error) {
-	encryptionHandler, err := pgp.Encryption().Recipient(getPrivateKey()).New()
+	privateKey, err := getPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+	encryptionHandler, err := pgp.Encryption().Recipient(privateKey).New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create encryption handler: %w", err)
 	}
@@ -36,7 +44,11 @@ func Encrypt(text string) ([]byte, error) {
 }
 
 func Decrypt(data []byte) ([]byte, error) {
-	decryptionHandler, err := pgp.Decryption().DecryptionKey(getPrivateKey()).New()
+	privateKey, err := getPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+	decryptionHandler, err := pgp.Decryption().DecryptionKey(privateKey).New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create decryption handler: %w", err)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/global-index-source/ksau-go/azure"
 	"github.com/global-index-source/ksau-go/cmd/progress"
 	"github.com/global-index-source/ksau-go/crypto"
+	"github.com/global-index-source/ksau-go/internal/config"
 )
 
 // ANSI color codes for terminal output
@@ -34,10 +35,17 @@ func getConfigPath() (string, error) {
 	}
 
 	var configDir string
-	if slices.Contains([]string{"android", "linux", "unix", "freebsd", "openbsd", "darwin"}, runtime.GOOS) {
+	if slices.Contains([]string{"android", "linux", "freebsd", "openbsd", "darwin"}, runtime.GOOS) {
 		configDir = filepath.Join(home, ".ksau", ".conf")
 	} else if runtime.GOOS == "windows" {
-		configDir = filepath.Join(home, "AppData", "Roaming", "ksau", ".conf")
+		appData := os.Getenv("APPDATA")
+		if appData == "" {
+			appData, err = os.UserConfigDir()
+			if err != nil {
+				return "", fmt.Errorf("failed to resolve AppData: %w", err)
+			}
+		}
+		configDir = filepath.Join(appData, "ksau", ".conf")
 	} else {
 		return "", fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
@@ -51,22 +59,22 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-func getConfigData() ([]byte, error) {
+func getConfigData() ([]byte, config.Format, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config path: %w", err)
+		return nil, "", fmt.Errorf("failed to get config path: %w", err)
 	}
 
-	data, err := os.ReadFile(configPath)
+	rawData, format, err := config.ReadConfigFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return nil, "", fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	decryptedConfig, err := crypto.Decrypt(data)
+	decodedConfig, err := config.DecodeConfig(rawData, format)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt user's config file: %w", err)
+		return nil, "", fmt.Errorf("failed to decode config file: %w", err)
 	}
-	return decryptedConfig, nil
+	return decodedConfig, format, nil
 
 }
 
@@ -146,7 +154,7 @@ func verifyFileIntegrity(filePath string, fileID string, client *azure.AzureClie
 
 func selectRemoteAutomatically(fileSize int64, progressStyle string) (string, error) {
 	var selectedRemote string
-	rcloneConfigData, err := getConfigData()
+	rcloneConfigData, _, err := getConfigData()
 	if err != nil {
 		return "", fmt.Errorf("failed to select random remote: %w", err)
 	}
