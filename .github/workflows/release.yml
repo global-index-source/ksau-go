@@ -16,7 +16,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.23.4"
+          # 1.27.3 / 1.26.10 are the first releases that distrust the
+          # compromised eMudhra intermediates (GO-2026-6809). Every TLS call
+          # ksau-go makes (Microsoft Graph, login.microsoftonline.com, the
+          # config fetch) goes through Go's own verifier on Linux.
+          go-version: "1.27.3"
 
       - name: Cache Go Modules
         uses: actions/cache@v3
